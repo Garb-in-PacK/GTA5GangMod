@@ -40,9 +40,9 @@ namespace GTA.GangAndTurfMod {
 				if (postWarBackupsRemaining > 0 && GangWarManager.instance.playerNearWarzone) {
 					Vector3 playerPos = MindControl.CurrentPlayerCharacter.Position,
 						safePlayerPos = MindControl.SafePositionNearPlayer;
-					if (SpawnManager.instance.SpawnParachutingMember(GangManager.instance.PlayerGang,
+					if (SpawnManager.instance.SpawnParachutingMember(GangManager.PlayerGang,
 					   playerPos + Vector3.WorldUp * 50, safePlayerPos) == null) {
-						SpawnManager.instance.SpawnGangVehicle(GangManager.instance.PlayerGang,
+						SpawnManager.instance.SpawnGangVehicle(GangManager.PlayerGang,
 						SpawnManager.instance.FindGoodSpawnPointForCar(safePlayerPos), safePlayerPos);
 					}
 					postWarBackupsRemaining--;
@@ -51,7 +51,7 @@ namespace GTA.GangAndTurfMod {
 				//if spawning is enabled, lets try to spawn the current zone's corresponding gang members!
 				if (ModOptions.instance.ambientSpawningEnabled && enabled) {
 
-					Gang curGang = GangManager.instance.GetGangByName(curTurfZone.ownerGangName);
+					Gang curGang = GangManager.GetGangByName(curTurfZone.ownerGangName);
 					if (GangWarManager.instance.isOccurring && GangWarManager.instance.enemyGang == curGang) return; //we want enemies of this gang to spawn only when close to the war
 
 					if (curTurfZone.ownerGangName != "none" && curGang != null) //only spawn if there really is a gang in control here
@@ -80,10 +80,11 @@ namespace GTA.GangAndTurfMod {
 			Logger.Log("ambient spawner tick: end", 5);
 		}
 
-		public void SpawnAmbientMember(Gang curGang) {
+		public SpawnedGangMember SpawnAmbientMember(Gang curGang) {
 			Vector3 spawnPos = SpawnManager.instance.FindGoodSpawnPointForMember
 				(MindControl.CurrentPlayerCharacter.Position);
 			SpawnedGangMember newMember = SpawnManager.instance.SpawnGangMember(curGang, spawnPos);
+            return newMember;
 		}
 
 		public void SpawnAmbientVehicle(Gang curGang) {

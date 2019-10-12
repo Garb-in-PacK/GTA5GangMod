@@ -99,7 +99,7 @@ namespace GTA.GangAndTurfMod {
 
 			if (currentZone != null) {
 				if (currentZone.ownerGangName != "none") {
-					if (GangManager.instance.GetGangByName(currentZone.ownerGangName) == null) {
+					if (GangManager.GetGangByName(currentZone.ownerGangName) == null) {
 						GiveGangZonesToAnother(currentZone.ownerGangName, "none");
 						currentZone.ownerGangName = "none";
 						SaveZoneData(false);
@@ -241,7 +241,7 @@ namespace GTA.GangAndTurfMod {
 
 		public void UpdateZoneBlip(TurfZone targetZone) {
 			if (targetZone.AttachedBlip != null) {
-				Gang ownerGang = GangManager.instance.GetGangByName(targetZone.ownerGangName);
+				Gang ownerGang = GangManager.GetGangByName(targetZone.ownerGangName);
 				if (ownerGang == null) {
 					targetZone.AttachedBlip.Sprite = BlipSprite.GTAOPlayerSafehouseDead;
 					targetZone.AttachedBlip.Color = BlipColor.White;

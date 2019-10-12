@@ -84,10 +84,10 @@ namespace GTA.GangAndTurfMod {
 
 			//and some more for that extra variation
 			for (int i = 0; i < RandoMath.CachedRandom.Next(2, 5); i++) {
-				preferredWeaponHashes.Add(RandoMath.GetRandomElementFromList(ModOptions.instance.buyableWeapons).wepHash);
+				preferredWeaponHashes.Add(RandoMath.GetRandomElementFromList(ModOptions.instance.buyableWeapons).WepHash);
 			}
 
-			GangManager.instance.SaveGangData(false);
+			GangManager.SaveGangData(false);
 		}
 
 		/// <summary>
@@ -96,12 +96,12 @@ namespace GTA.GangAndTurfMod {
 		///a sign that somethings wrong, because 0 is white blip color
 		/// </summary>
 		public void EnforceGangColorConsistency() {
-			ModOptions.GangColorTranslation ourColor = ModOptions.instance.GetGangColorTranslation(memberVariations[0].linkedColor);
-			if ((blipColor == 0 && ourColor.baseColor != PotentialGangMember.MemberColor.white) ||
-				(vehicleColor == VehicleColor.MetallicBlack && ourColor.baseColor != PotentialGangMember.MemberColor.black)) {
-				blipColor = RandoMath.GetRandomElementFromArray(ourColor.blipColors);
-				vehicleColor = RandoMath.GetRandomElementFromList(ourColor.vehicleColors);
-				GangManager.instance.SaveGangData(false);
+			GangColorTranslation ourColor = ModOptions.instance.GetGangColorTranslation(memberVariations[0].linkedColor);
+			if ((blipColor == 0 && ourColor.BaseColor != PotentialGangMember.MemberColor.white) ||
+				(vehicleColor == VehicleColor.MetallicBlack && ourColor.BaseColor != PotentialGangMember.MemberColor.black)) {
+				blipColor = RandoMath.GetRandomElementFromArray(ourColor.BlipColors);
+				vehicleColor = RandoMath.GetRandomElementFromList(ourColor.VehicleColors);
+				GangManager.SaveGangData(false);
 			}
 		}
 
@@ -114,7 +114,7 @@ namespace GTA.GangAndTurfMod {
 			memberAccuracyLevel = RandoMath.TrimValue(memberAccuracyLevel, 0, ModOptions.instance.maxGangMemberAccuracy);
 			baseTurfValue = RandoMath.TrimValue(baseTurfValue, 0, ModOptions.instance.maxTurfValue);
 
-			GangManager.instance.SaveGangData(false);
+			GangManager.SaveGangData(false);
 		}
 
 		/// <summary>
@@ -133,7 +133,7 @@ namespace GTA.GangAndTurfMod {
 				SetPreferredWeapons();
 			}
 
-			GangManager.instance.SaveGangData(false);
+			GangManager.SaveGangData(false);
 		}
 
 		public bool AddMemberVariation(PotentialGangMember newMember) {
@@ -151,7 +151,7 @@ namespace GTA.GangAndTurfMod {
 			}
 
 			memberVariations.Add(newMember);
-			GangManager.instance.SaveGangData(isPlayerOwned);
+			GangManager.SaveGangData(isPlayerOwned);
 			return true;
 		}
 
@@ -168,10 +168,10 @@ namespace GTA.GangAndTurfMod {
 
 						//get new members if we have none now and we're AI-controlled
 						if (memberVariations.Count == 0 && !isPlayerOwned) {
-							GangManager.instance.GetMembersForGang(this);
+							GangManager.GetMembersForGang(this);
 						}
 
-						GangManager.instance.SaveGangData();
+						GangManager.SaveGangData();
 						return true;
 					}
 				}
@@ -188,10 +188,10 @@ namespace GTA.GangAndTurfMod {
 
 						//get new members if we have none now and we're AI-controlled
 						if (memberVariations.Count == 0 && !isPlayerOwned) {
-							GangManager.instance.GetMembersForGang(this);
+							GangManager.GetMembersForGang(this);
 						}
 
-						GangManager.instance.SaveGangData();
+						GangManager.SaveGangData();
 						return true;
 					}
 				}
@@ -212,7 +212,7 @@ namespace GTA.GangAndTurfMod {
 			}
 
 			carVariations.Add(newVehicleType);
-			GangManager.instance.SaveGangData();
+			GangManager.SaveGangData();
 			return true;
 		}
 
@@ -229,7 +229,7 @@ namespace GTA.GangAndTurfMod {
 						carVariations.Add(PotentialGangVehicle.GetCarFromPool());
 					}
 
-					GangManager.instance.SaveGangData();
+					GangManager.SaveGangData();
 					return true;
 				}
 			}
@@ -270,9 +270,9 @@ namespace GTA.GangAndTurfMod {
 		public int GetGangVariedStrengthValue() {
 			int weaponValue = 200;
 			if (gangWeaponHashes.Count > 0) {
-				ModOptions.BuyableWeapon randomWeap = ModOptions.instance.GetBuyableWeaponByHash(RandoMath.GetRandomElementFromList(gangWeaponHashes));
+				BuyableWeapon randomWeap = ModOptions.instance.GetBuyableWeaponByHash(RandoMath.GetRandomElementFromList(gangWeaponHashes));
 				if (randomWeap != null) {
-					weaponValue = randomWeap.price;
+					weaponValue = randomWeap.Price;
 				}
 			}
 			return ZoneManager.instance.GetZonesControlledByGang(name).Count * 50 +
@@ -303,9 +303,10 @@ namespace GTA.GangAndTurfMod {
 				baseTurfValue * 500;
 		}
 
-		public int CompareGunsByPrice(WeaponHash x, WeaponHash y) {
-			ModOptions.BuyableWeapon buyableX = ModOptions.instance.GetBuyableWeaponByHash(x),
-				buyableY = buyableX = ModOptions.instance.GetBuyableWeaponByHash(y);
+		public static int CompareGunsByPrice(WeaponHash x, WeaponHash y) {
+            BuyableWeapon buyableX = ModOptions.instance.GetBuyableWeaponByHash(x),
+                buyableY = ModOptions.instance.GetBuyableWeaponByHash(y);
+
 			if (buyableX == null) {
 				if (buyableY == null) {
 					return 0;
@@ -320,7 +321,7 @@ namespace GTA.GangAndTurfMod {
 				}
 				else {
 
-					return buyableY.price.CompareTo(buyableX.price);
+					return buyableY.Price.CompareTo(buyableX.Price);
 				}
 			}
 		}

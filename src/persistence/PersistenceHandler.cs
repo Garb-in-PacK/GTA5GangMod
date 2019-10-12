@@ -24,7 +24,6 @@ namespace GTA.GangAndTurfMod {
 				try {
 					using (FileStream readStream = new FileStream(filePath, FileMode.Open)) {
 						T loadedData = (T)serializer.Deserialize(readStream);
-						readStream.Close();
 						Logger.Log("loaded " + fileName + "!", 2);
 						return loadedData;
 					}
@@ -35,13 +34,13 @@ namespace GTA.GangAndTurfMod {
 					//backup the bad file! It's very sad to lose saved data, even if it's corrupted somehow
 					string bkpFilePath = Application.StartupPath + "/gangModData/" + fileName + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".xml";
 					File.Copy(filePath, bkpFilePath, true);
-					return default(T);
+					return default;
 				}
 
 			}
 			else {
 				Logger.Log("file " + fileName + " doesn't exist; loading a default setup", 2);
-				return default(T);
+				return default;
 			}
 
 		}
@@ -60,7 +59,6 @@ namespace GTA.GangAndTurfMod {
 
 				using (StreamWriter writer = new StreamWriter(filePath)) {
 					serializer.Serialize(writer, dataToSave);
-					writer.Close();
 				}
 
 				if (notifyMsg) {

@@ -9,7 +9,7 @@ using GTA.Math;
 namespace GTA.GangAndTurfMod {
 	public class SpawnedGangMember : UpdatedClass {
 
-		public static string[] idleAnims =
+		private static readonly string[] idleAnims =
 		{
 			"WORLD_HUMAN_SMOKING",
 			"WORLD_HUMAN_HANG_OUT_STREET",
@@ -31,13 +31,20 @@ namespace GTA.GangAndTurfMod {
 			inVehicle
 		}
 
-		public const int ticksBetweenIdleChange = 10;
+		private const int TICKS_BETWEEN_IDLE_CHANGE = 10;
 
-		int ticksSinceLastIdleChange = 0;
+		private int ticksSinceLastIdleChange = 0;
 
 		public MemberStatus curStatus = MemberStatus.none;
 
 		public bool hasDriveByGun = false;
+
+        public delegate void OnMemberDied(SpawnedGangMember deadMember);
+
+        /// <summary>
+        /// this delegate is called whenever a member dies (no longer alive, too distant members shouldn't call this)
+        /// </summary>
+        public static OnMemberDied onMemberDied;
 
 		public override void Update() {
 			Logger.Log("member update: start", 5);
@@ -58,7 +65,7 @@ namespace GTA.GangAndTurfMod {
 				if (RandoMath.RandomBool() && !watchedPed.IsInGroup && !watchedPed.IsInCombat) {
 					if (GangWarManager.instance.isOccurring && GangWarManager.instance.playerNearWarzone) {
 						//instead of idling while in a war, members should head for one of the spawn points
-						if (myGang == GangManager.instance.PlayerGang) {
+						if (myGang == GangManager.PlayerGang) {
 							if (GangWarManager.instance.enemySpawnPoints != null) {
 								Vector3 ourDestination = RandoMath.GetRandomElementFromArray(GangWarManager.instance.enemySpawnPoints);
 								if (ourDestination != Vector3.Zero) {
@@ -80,7 +87,7 @@ namespace GTA.GangAndTurfMod {
 						ticksSinceLastIdleChange = 0;
 					}
 					else {
-						if (curStatus != MemberStatus.onFootThinking || ticksSinceLastIdleChange > ticksBetweenIdleChange) {
+						if (curStatus != MemberStatus.onFootThinking || ticksSinceLastIdleChange > TICKS_BETWEEN_IDLE_CHANGE) {
 							curStatus = MemberStatus.onFootThinking;
 							if (RandoMath.RandomBool()) {
 								watchedPed.Task.WanderAround();
@@ -134,7 +141,7 @@ namespace GTA.GangAndTurfMod {
 						//enemy down
 						GangWarManager.instance.OnEnemyDeath();
 					}
-					else if (watchedPed.RelationshipGroup == GangManager.instance.PlayerGang.relationGroupIndex) {
+					else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex) {
 						//ally down
 						GangWarManager.instance.OnAllyDeath();
 					}
@@ -160,7 +167,7 @@ namespace GTA.GangAndTurfMod {
 						//enemy down
 						GangWarManager.instance.DecrementSpawnedsNumber(false);
 					}
-					else if (watchedPed.RelationshipGroup == GangManager.instance.PlayerGang.relationGroupIndex) {
+					else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex) {
 						//ally down
 						GangWarManager.instance.DecrementSpawnedsNumber(true);
 					}
@@ -221,7 +228,7 @@ namespace GTA.GangAndTurfMod {
 		public bool CanFight() {
 			return (ModOptions.instance.gangMemberAggressiveness !=
 					ModOptions.GangMemberAggressivenessMode.defensive ||
-					(GangWarManager.instance.isOccurring && (myGang == GangWarManager.instance.enemyGang || myGang == GangManager.instance.PlayerGang)));
+					(GangWarManager.instance.isOccurring && (myGang == GangWarManager.instance.enemyGang || myGang == GangManager.PlayerGang)));
 		}
 
 	}

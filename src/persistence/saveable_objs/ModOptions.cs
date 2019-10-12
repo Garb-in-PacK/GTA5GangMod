@@ -10,8 +10,9 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Resolvers;
 
-namespace GTA.GangAndTurfMod {
-	[System.Serializable]
+namespace GTA.GangAndTurfMod
+{
+    [System.Serializable]
 	public class ModOptions {
 		public static ModOptions instance;
 
@@ -116,7 +117,7 @@ namespace GTA.GangAndTurfMod {
 					SetColorTranslationDefaultValues();
 				}
 				else {
-					if (similarColors[0].blipColors == null) {
+					if (similarColors[0].BlipColors == null) {
 						SetColorTranslationDefaultValues();
 					}
 				}
@@ -287,43 +288,11 @@ namespace GTA.GangAndTurfMod {
 
 		public List<VehicleColor> extraPlayerExclusiveColors;
 
-		//XMLserializer does not like dictionaries
-		public class BuyableWeapon {
-			public WeaponHash wepHash;
-			public int price;
-
-			public BuyableWeapon() {
-				wepHash = WeaponHash.SNSPistol;
-				price = 500;
-			}
-
-			public BuyableWeapon(WeaponHash wepHash, int price) {
-				this.wepHash = wepHash;
-				this.price = price;
-			}
-		}
-
-		public class GangColorTranslation {
-			public List<VehicleColor> vehicleColors;
-			public PotentialGangMember.MemberColor baseColor;
-			public int[] blipColors;
-
-			public GangColorTranslation() {
-				vehicleColors = new List<VehicleColor>();
-			}
-
-			public GangColorTranslation(PotentialGangMember.MemberColor baseColor, List<VehicleColor> vehicleColors, int[] blipColors) {
-				this.baseColor = baseColor;
-				this.vehicleColors = vehicleColors;
-				this.blipColors = blipColors;
-			}
-		}
-
 		#region getters
 
 		public BuyableWeapon GetBuyableWeaponByHash(WeaponHash wepHash) {
 			for (int i = 0; i < buyableWeapons.Count; i++) {
-				if (buyableWeapons[i].wepHash == wepHash) {
+				if (buyableWeapons[i].WepHash == wepHash) {
 					return buyableWeapons[i];
 				}
 			}
@@ -333,7 +302,7 @@ namespace GTA.GangAndTurfMod {
 
 		public GangColorTranslation GetGangColorTranslation(PotentialGangMember.MemberColor baseColor) {
 			for (int i = 0; i < similarColors.Count; i++) {
-				if (similarColors[i].baseColor == baseColor) {
+				if (similarColors[i].BaseColor == baseColor) {
 					return similarColors[i];
 				}
 			}
@@ -404,15 +373,15 @@ namespace GTA.GangAndTurfMod {
 				}
 			}
 
-			return RandoMath.GetRandomElementFromList(buyableWeapons).wepHash;
+			return RandoMath.GetRandomElementFromList(buyableWeapons).WepHash;
 		}
 
 		#endregion
 
 		public PotentialGangMember.MemberColor TranslateVehicleToMemberColor(VehicleColor vehColor) {
 			for (int i = 0; i < similarColors.Count; i++) {
-				if (similarColors[i].vehicleColors.Contains(vehColor)) {
-					return similarColors[i].baseColor;
+				if (similarColors[i].VehicleColors.Contains(vehColor)) {
+					return similarColors[i].BaseColor;
 				}
 			}
 
@@ -433,9 +402,9 @@ namespace GTA.GangAndTurfMod {
 			}
 			//primary weapons are the ones that are not melee and cannot be used to drive-by (the bigger weapons, like rifles)
 			for (int i = 0; i < buyableWeapons.Count; i++) {
-				if (!meleeWeapons.Contains(buyableWeapons[i].wepHash) &&
-					!driveByWeapons.Contains(buyableWeapons[i].wepHash)) {
-					primaryWeapons.Add(buyableWeapons[i].wepHash);
+				if (!meleeWeapons.Contains(buyableWeapons[i].WepHash) &&
+					!driveByWeapons.Contains(buyableWeapons[i].WepHash)) {
+					primaryWeapons.Add(buyableWeapons[i].WepHash);
 				}
 			}
 		}
@@ -483,10 +452,10 @@ namespace GTA.GangAndTurfMod {
 
 		public void SetMemberAggressiveness(GangMemberAggressivenessMode newMode) {
 			gangMemberAggressiveness = newMode;
-			GangManager.instance.SetGangRelationsAccordingToAggrLevel(newMode);
+			GangManager.SetGangRelationsAccordingToAggrLevel(newMode);
 			//makes everyone hate cops if set to very aggressive
-			GangManager.instance.SetCopRelations(newMode == GangMemberAggressivenessMode.veryAgressive);
-			MenuScript.instance.aggOption.Index = (int)newMode;
+			GangManager.SetCopRelations(newMode == GangMemberAggressivenessMode.veryAgressive);
+			MenuScript.Instance.AggOption.Index = (int)newMode;
 
 			SaveOptions(false);
 		}
@@ -578,7 +547,7 @@ namespace GTA.GangAndTurfMod {
 
 			SaveOptions();
 
-			GangManager.instance.ResetGangUpdateIntervals();
+			GangManager.ResetGangUpdateIntervals();
 		}
 
 		public void SetWeaponListDefaultValues() {

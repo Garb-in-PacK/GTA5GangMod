@@ -7,6 +7,7 @@ using GTA.Native;
 
 namespace GTA.GangAndTurfMod {
 	public class GangAI : UpdatedClass {
+
 		public Gang watchedGang;
 
 		private List<TurfZone> myZones;
@@ -56,7 +57,7 @@ namespace GTA.GangAndTurfMod {
 					myZones = ZoneManager.instance.GetZonesControlledByGang(watchedGang.name);
 					if (myZones.Count == 0) {
 						if (ModOptions.instance.gangsCanBeWipedOut) {
-							GangManager.instance.KillGang(this);
+							GangManager.KillGang(this);
 						}
 						else {
 							//we get some money then, at least to keep trying to fight
@@ -103,14 +104,14 @@ namespace GTA.GangAndTurfMod {
 				//maybe the chosen weapon can no longer be bought
 				if (ModOptions.instance.GetBuyableWeaponByHash(chosenWeapon) == null) {
 					watchedGang.preferredWeaponHashes.Remove(chosenWeapon);
-					GangManager.instance.SaveGangData(false);
+					GangManager.SaveGangData(false);
 					return;
 				}
 
-				if (watchedGang.moneyAvailable >= ModOptions.instance.GetBuyableWeaponByHash(chosenWeapon).price) {
-					watchedGang.moneyAvailable -= ModOptions.instance.GetBuyableWeaponByHash(chosenWeapon).price;
+				if (watchedGang.moneyAvailable >= ModOptions.instance.GetBuyableWeaponByHash(chosenWeapon).Price) {
+					watchedGang.moneyAvailable -= ModOptions.instance.GetBuyableWeaponByHash(chosenWeapon).Price;
 					watchedGang.gangWeaponHashes.Add(chosenWeapon);
-					GangManager.instance.SaveGangData(false);
+					GangManager.SaveGangData(false);
 				}
 			}
 		}
@@ -127,7 +128,7 @@ namespace GTA.GangAndTurfMod {
 							watchedGang.memberAccuracyLevel = ModOptions.instance.maxGangMemberAccuracy;
 						}
 
-						GangManager.instance.SaveGangData(false);
+						GangManager.SaveGangData(false);
 					}
 					break;
 				case 1: //armor!
@@ -140,7 +141,7 @@ namespace GTA.GangAndTurfMod {
 							watchedGang.memberArmor = ModOptions.instance.maxGangMemberArmor;
 						}
 
-						GangManager.instance.SaveGangData(false);
+						GangManager.SaveGangData(false);
 					}
 					break;
 
@@ -154,7 +155,7 @@ namespace GTA.GangAndTurfMod {
 							watchedGang.memberHealth = ModOptions.instance.maxGangMemberHealth;
 						}
 
-						GangManager.instance.SaveGangData(false);
+						GangManager.SaveGangData(false);
 					}
 					break;
 			}
@@ -166,10 +167,10 @@ namespace GTA.GangAndTurfMod {
 			//upgrade the whole gang strength if possible!
 			//lets not get more upgrades here than the player. it may get too hard for the player to catch up otherwise
 			if (watchedGang.moneyAvailable >= upgradeCost &&
-				watchedGang.baseTurfValue <= GangManager.instance.PlayerGang.baseTurfValue - 1) {
+				watchedGang.baseTurfValue <= GangManager.PlayerGang.baseTurfValue - 1) {
 				watchedGang.moneyAvailable -= upgradeCost;
 				watchedGang.baseTurfValue++;
-				GangManager.instance.SaveGangData(false);
+				GangManager.SaveGangData(false);
 				return;
 			}
 			//if we have enough money to upgrade a zone,
@@ -210,7 +211,7 @@ namespace GTA.GangAndTurfMod {
 		/// </summary>
 		/// <param name="targetZone"></param>
 		void TryStartFightForZone(TurfZone targetZone) {
-			Gang ownerGang = GangManager.instance.GetGangByName(targetZone.ownerGangName);
+			Gang ownerGang = GangManager.GetGangByName(targetZone.ownerGangName);
 
 			if (ownerGang == null) {
 				Logger.Log("Gang with name " + targetZone.ownerGangName + " no longer exists; assigning all owned turf to 'none'", 1);
@@ -248,7 +249,7 @@ namespace GTA.GangAndTurfMod {
 					}
 				}
 
-				if (targetZone.ownerGangName == GangManager.instance.PlayerGang.name) {
+				if (targetZone.ownerGangName == GangManager.PlayerGang.name) {
 					if (ModOptions.instance.warAgainstPlayerEnabled &&
 					GangWarManager.instance.CanStartWarAgainstPlayer) {
 						//the player may be in big trouble now

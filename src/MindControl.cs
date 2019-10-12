@@ -13,16 +13,14 @@ namespace GTA.GangAndTurfMod {
 	/// <summary>
 	/// this script controls most things related to the mind control feature
 	/// </summary>
-	public class MindControl {
+	public static class MindControl {
 
-		public static MindControl instance;
+		public static SpawnedGangMember CurrentlyControlledMember { get; private set; } = null;
+		private static bool hasDiedWithChangedBody = false;
+		private static Ped theOriginalPed;
 
-		public SpawnedGangMember currentlyControlledMember = null;
-		public bool hasDiedWithChangedBody = false;
-		public Ped theOriginalPed;
-
-		private int moneyFromLastProtagonist = 0;
-		private int defaultMaxHealth = 200;
+		private static int moneyFromLastProtagonist = 0;
+		private static int defaultMaxHealth = -1;
 
 		/// <summary>
 		/// the character currently controlled by the player. 
@@ -32,8 +30,8 @@ namespace GTA.GangAndTurfMod {
 		{
 			get
 			{
-				if (instance.HasChangedBody) {
-					return instance.currentlyControlledMember.watchedPed;
+				if (HasChangedBody) {
+					return CurrentlyControlledMember.watchedPed;
 				}
 				else {
 					return Game.Player.Character;
@@ -71,18 +69,7 @@ namespace GTA.GangAndTurfMod {
 			}
 		}
 
-
-
-
-
-		public MindControl() {
-			instance = this;
-
-			defaultMaxHealth = Game.Player.Character.MaxHealth;
-
-		}
-
-		public void Tick() {
+		public static void Tick() {
 			if (HasChangedBody) {
 				TickMindControl();
 			}
@@ -93,7 +80,7 @@ namespace GTA.GangAndTurfMod {
 		/// <summary>
 		/// the addition to the tick methods when the player is in control of a member
 		/// </summary>
-		void TickMindControl() {
+		static void TickMindControl() {
 			if (Function.Call<bool>(Hash.IS_PLAYER_BEING_ARRESTED, Game.Player, true)) {
 				UI.ShowSubtitle("Your member has been arrested!");
 				RestorePlayerBody();
@@ -142,10 +129,10 @@ namespace GTA.GangAndTurfMod {
 		/// attempts to change the player's body.
 		/// if the player has already changed body, the original body is restored
 		/// </summary>
-		public void TryBodyChange() {
+		public static void TryBodyChange() {
 			if (!HasChangedBody) {
 				List<Ped> playerGangMembers = SpawnManager.instance.GetSpawnedPedsOfGang
-					(GangManager.instance.PlayerGang);
+					(GangManager.PlayerGang);
 				for (int i = 0; i < playerGangMembers.Count; i++) {
 					if (Game.Player.IsTargetting(playerGangMembers[i])) {
 						if (playerGangMembers[i].IsAlive) {
@@ -172,7 +159,7 @@ namespace GTA.GangAndTurfMod {
 
 		}
 
-		void TakePedBody(Ped targetPed) {
+		static void TakePedBody(Ped targetPed) {
 			targetPed.Task.ClearAllImmediately();
 
 			Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, targetPed, true, true);
@@ -180,7 +167,7 @@ namespace GTA.GangAndTurfMod {
 			targetPed.Armor += targetPed.Health;
 			targetPed.MaxHealth = 5000;
 			targetPed.Health = 5000;
-			currentlyControlledMember = SpawnManager.instance.GetTargetMemberAI(targetPed);
+			CurrentlyControlledMember = SpawnManager.instance.GetTargetMemberAI(targetPed);
 
 			Game.Player.CanControlCharacter = true;
 		}
@@ -189,9 +176,9 @@ namespace GTA.GangAndTurfMod {
 		/// makes the body the player was using become dead for real
 		/// </summary>
 		/// <param name="theBody"></param>
-		void DiscardDeadBody(Ped theBody) {
+		static void DiscardDeadBody(Ped theBody) {
 			hasDiedWithChangedBody = false;
-			theBody.RelationshipGroup = GangManager.instance.PlayerGang.relationGroupIndex;
+			theBody.RelationshipGroup = GangManager.PlayerGang.relationGroupIndex;
 			theBody.IsInvincible = false;
 			theBody.Health = 0;
 			theBody.Kill();
@@ -202,12 +189,12 @@ namespace GTA.GangAndTurfMod {
 		/// if there isnt any, creates one parachuting.
 		/// you can only respawn if you have died as a gang member
 		/// </summary>
-		public void RespawnIfPossible() {
+		public static void RespawnIfPossible() {
 			if (hasDiedWithChangedBody) {
 				Ped oldPed = CurrentPlayerCharacter;
 
 				List<Ped> respawnOptions = SpawnManager.instance.GetSpawnedPedsOfGang
-					(GangManager.instance.PlayerGang);
+					(GangManager.PlayerGang);
 
 				for (int i = 0; i < respawnOptions.Count; i++) {
 					if (respawnOptions[i].IsAlive && !respawnOptions[i].IsInVehicle()) {
@@ -221,7 +208,7 @@ namespace GTA.GangAndTurfMod {
 
 				//lets parachute if no one outside a veh is around
 				SpawnedGangMember spawnedPara = SpawnManager.instance.SpawnGangMember
-					(GangManager.instance.PlayerGang,
+					(GangManager.PlayerGang,
 				   CurrentPlayerCharacter.Position + Vector3.WorldUp * 70);
 				if (spawnedPara != null) {
 					TakePedBody(spawnedPara.watchedPed);
@@ -233,7 +220,10 @@ namespace GTA.GangAndTurfMod {
 			}
 		}
 
-		public void RestorePlayerBody() {
+        /// <summary>
+        /// restores player control to the last protagonist being used
+        /// </summary>
+		public static void RestorePlayerBody() {
 			Ped oldPed = CurrentPlayerCharacter;
 			//return to original body
 			Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, theOriginalPed, true, true);
@@ -251,21 +241,24 @@ namespace GTA.GangAndTurfMod {
 			}
 			else {
 				oldPed.Health = oldPed.Armor + 100;
-				oldPed.RelationshipGroup = GangManager.instance.PlayerGang.relationGroupIndex;
+				oldPed.RelationshipGroup = GangManager.PlayerGang.relationGroupIndex;
 				oldPed.Task.ClearAllImmediately();
 			}
 
 			hasDiedWithChangedBody = false;
 			Game.Player.Money = moneyFromLastProtagonist;
 			Game.Player.IgnoredByEveryone = false;
-			currentlyControlledMember = null;
+			CurrentlyControlledMember = null;
 		}
 
-		public bool HasChangedBody
+        /// <summary>
+        /// are we currently controlling a member?
+        /// </summary>
+		public static bool HasChangedBody
 		{
 			get
 			{
-				return currentlyControlledMember != null;
+				return CurrentlyControlledMember != null;
 			}
 		}
 
@@ -275,7 +268,7 @@ namespace GTA.GangAndTurfMod {
 		/// </summary>
 		/// <param name="valueToAdd"></param>
 		/// <returns></returns>
-		public bool AddOrSubtractMoneyToProtagonist(int valueToAdd, bool onlyCheck = false) {
+		public static bool AddOrSubtractMoneyToProtagonist(int valueToAdd, bool onlyCheck = false) {
 			if (HasChangedBody) {
 				if (valueToAdd > 0 || moneyFromLastProtagonist >= RandoMath.Abs(valueToAdd)) {
 					if (!onlyCheck) moneyFromLastProtagonist += valueToAdd;

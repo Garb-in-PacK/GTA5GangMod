@@ -12,44 +12,30 @@ namespace GTA.GangAndTurfMod {
 	/// basically a potential gang member with more data to be saved
 	/// </summary>
 	public class FreemodePotentialGangMember : PotentialGangMember {
-		/// <summary>
-		/// male indexes seem to go from 0-20, female from 21-41.
-		/// dlc faces seem to be 42 43 44 male and 45 female
-		/// </summary>
-		private static int numberOfFaceIndexes = 46;
+        /// <summary>
+        /// male indexes seem to go from 0-20, female from 21-41.
+        /// dlc faces seem to be 42 43 44 male and 45 female
+        /// </summary>
+        private const int NUM_FACE_INDEXES = 46;
 
-		/// <summary>
-		/// more drawable data, unused by potential gang members, but should probably be used here
-		/// (indexes used are 1 and 5-11)
-		/// </summary>
-		public int[] extraDrawableIndexes;
+        public int[] ExtraDrawableIndexes { get; set; }
+        public int[] ExtraTextureIndexes { get; set; }
+        public int[] PropDrawableIndexes { get; set; }
+        public int[] PropTextureIndexes { get; set; }
+        public int[] HeadOverlayIndexes { get; set; }
 
-		public int[] extraTextureIndexes;
-
-		/// <summary>
-		/// props are helmets, masks, glasses etc
-		/// </summary>
-		public int[] propDrawableIndexes;
-
-		public int[] propTextureIndexes;
-
-		/// <summary>
-		/// indexes probably related to makeup and minor facial features, like freckles
-		/// </summary>
-		public int[] headOverlayIndexes;
-
-		public enum FreemodeGender {
+        public enum FreemodeGender {
 			any,
 			male,
 			female
 		}
 
 		public FreemodePotentialGangMember() {
-			headOverlayIndexes = new int[13];
-			extraDrawableIndexes = new int[8];
-			extraTextureIndexes = new int[8];
-			propDrawableIndexes = new int[3];
-			propTextureIndexes = new int[3];
+			HeadOverlayIndexes = new int[13];
+			ExtraDrawableIndexes = new int[8];
+			ExtraTextureIndexes = new int[8];
+			PropDrawableIndexes = new int[3];
+			PropTextureIndexes = new int[3];
 			modelHash = -1;
 			myStyle = DressStyle.special;
 			linkedColor = MemberColor.white;
@@ -63,32 +49,32 @@ namespace GTA.GangAndTurfMod {
 		}
 
 		public FreemodePotentialGangMember(Ped targetPed, DressStyle myStyle, MemberColor linkedColor) : base(targetPed, myStyle, linkedColor) {
-			headOverlayIndexes = new int[13];
-			extraDrawableIndexes = new int[8];
-			extraTextureIndexes = new int[8];
-			propDrawableIndexes = new int[3];
-			propTextureIndexes = new int[3];
+			HeadOverlayIndexes = new int[13];
+			ExtraDrawableIndexes = new int[8];
+			ExtraTextureIndexes = new int[8];
+			PropDrawableIndexes = new int[3];
+			PropTextureIndexes = new int[3];
 
 			//we've already got the model hash, torso indexes and stuff.
 			//time to get the new data
-			for (int i = 0; i < headOverlayIndexes.Length; i++) {
-				headOverlayIndexes[i] = Function.Call<int>(Hash._GET_PED_HEAD_OVERLAY_VALUE, targetPed, i);
+			for (int i = 0; i < HeadOverlayIndexes.Length; i++) {
+				HeadOverlayIndexes[i] = Function.Call<int>(Hash._GET_PED_HEAD_OVERLAY_VALUE, targetPed, i);
 
-				if (i < propDrawableIndexes.Length) {
-					propDrawableIndexes[i] = Function.Call<int>(Hash.GET_PED_PROP_INDEX, targetPed, i);
-					propTextureIndexes[i] = Function.Call<int>(Hash.GET_PED_PROP_TEXTURE_INDEX, targetPed, i);
+				if (i < PropDrawableIndexes.Length) {
+					PropDrawableIndexes[i] = Function.Call<int>(Hash.GET_PED_PROP_INDEX, targetPed, i);
+					PropTextureIndexes[i] = Function.Call<int>(Hash.GET_PED_PROP_TEXTURE_INDEX, targetPed, i);
 				}
 
 				//extra drawable indexes
 				if (i == 1) {
-					extraDrawableIndexes[0] = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, targetPed, i);
-					extraTextureIndexes[0] = Function.Call<int>(Hash.GET_PED_TEXTURE_VARIATION, targetPed, i);
+					ExtraDrawableIndexes[0] = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, targetPed, i);
+					ExtraTextureIndexes[0] = Function.Call<int>(Hash.GET_PED_TEXTURE_VARIATION, targetPed, i);
 				}
 
 				//indexes from 5 to 11
 				if (i > 4 && i < 12) {
-					extraDrawableIndexes[i - 4] = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, targetPed, i);
-					extraTextureIndexes[i - 4] = Function.Call<int>(Hash.GET_PED_TEXTURE_VARIATION, targetPed, i);
+					ExtraDrawableIndexes[i - 4] = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, targetPed, i);
+					ExtraTextureIndexes[i - 4] = Function.Call<int>(Hash.GET_PED_TEXTURE_VARIATION, targetPed, i);
 				}
 			}
 
@@ -112,9 +98,9 @@ namespace GTA.GangAndTurfMod {
 			Function.Call(Hash._SET_PED_EYE_COLOR, targetPed, RandoMath.CachedRandom.Next(0, 23));
 
 			//new data time!
-			for (int i = 0; i < headOverlayIndexes.Length; i++) {
+			for (int i = 0; i < HeadOverlayIndexes.Length; i++) {
 				//indexes for overlays
-				Function.Call(Hash.SET_PED_HEAD_OVERLAY, targetPed, i, headOverlayIndexes[i], 1.0f);
+				Function.Call(Hash.SET_PED_HEAD_OVERLAY, targetPed, i, HeadOverlayIndexes[i], 1.0f);
 
 				//attempt to keep eyebrow and other colors similar to hair
 				//we only mess with beard, eyebrow, blush, lipstick and chest hair colors
@@ -123,27 +109,27 @@ namespace GTA.GangAndTurfMod {
 				}
 
 
-				if (i < propDrawableIndexes.Length) {
-					Function.Call<int>(Hash.SET_PED_PROP_INDEX, targetPed, i, propDrawableIndexes[i], propTextureIndexes[i], true);
+				if (i < PropDrawableIndexes.Length) {
+					Function.Call<int>(Hash.SET_PED_PROP_INDEX, targetPed, i, PropDrawableIndexes[i], PropTextureIndexes[i], true);
 				}
 
 				//extra drawable indexes
 				if (i == 1) {
-					Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, i, extraDrawableIndexes[0], extraTextureIndexes[0], pedPalette);
+					Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, i, ExtraDrawableIndexes[0], ExtraTextureIndexes[0], pedPalette);
 				}
 
 				//indexes from 5 to 11
 				if (i > 4 && i < 12) {
-					Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, i, extraDrawableIndexes[i - 4], extraTextureIndexes[i - 4], pedPalette);
+					Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, i, ExtraDrawableIndexes[i - 4], ExtraTextureIndexes[i - 4], pedPalette);
 				}
 			}
 
 		}
 
 		public static int GetAFaceIndex(FreemodeGender desiredGender) {
-			int returnedIndex = 0;
-			if (desiredGender == FreemodeGender.any) {
-				returnedIndex = RandoMath.CachedRandom.Next(numberOfFaceIndexes);
+            int returnedIndex;
+            if (desiredGender == FreemodeGender.any) {
+				returnedIndex = RandoMath.CachedRandom.Next(NUM_FACE_INDEXES);
 			}
 			else if (desiredGender == FreemodeGender.female) {
 				returnedIndex = RandoMath.CachedRandom.Next(21, 43);
@@ -186,11 +172,11 @@ namespace GTA.GangAndTurfMod {
 					freeListEntry.legsTextureIndex == potentialEntry.legsTextureIndex &&
 					freeListEntry.torsoDrawableIndex == potentialEntry.torsoDrawableIndex &&
 					freeListEntry.torsoTextureIndex == potentialEntry.torsoTextureIndex &&
-					AreArrayContentsTheSame(freeListEntry.extraDrawableIndexes, potentialEntry.extraDrawableIndexes) &&
-					AreArrayContentsTheSame(freeListEntry.extraTextureIndexes, potentialEntry.extraTextureIndexes) &&
-					AreArrayContentsTheSame(freeListEntry.propDrawableIndexes, potentialEntry.propDrawableIndexes) &&
-					AreArrayContentsTheSame(freeListEntry.propTextureIndexes, potentialEntry.propTextureIndexes) &&
-					AreArrayContentsTheSame(freeListEntry.headOverlayIndexes, potentialEntry.headOverlayIndexes)) {
+					AreArrayContentsTheSame(freeListEntry.ExtraDrawableIndexes, potentialEntry.ExtraDrawableIndexes) &&
+					AreArrayContentsTheSame(freeListEntry.ExtraTextureIndexes, potentialEntry.ExtraTextureIndexes) &&
+					AreArrayContentsTheSame(freeListEntry.PropDrawableIndexes, potentialEntry.PropDrawableIndexes) &&
+					AreArrayContentsTheSame(freeListEntry.PropTextureIndexes, potentialEntry.PropTextureIndexes) &&
+					AreArrayContentsTheSame(freeListEntry.HeadOverlayIndexes, potentialEntry.HeadOverlayIndexes)) {
 						return freeListEntry;
 					}
 				}

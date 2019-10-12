@@ -26,7 +26,7 @@ namespace GTA.GangAndTurfMod {
 			}
 			Wait(ModOptions.instance.msAutoSaveInterval);
 			if (gangDataDirty) {
-				PersistenceHandler.SaveToFile(GangManager.instance.gangData, "GangData", gangDataNotifySave);
+				PersistenceHandler.SaveToFile(GangManager.gangData, "GangData", gangDataNotifySave);
 				gangDataDirty = false;
 				gangDataNotifySave = false;
 				return;

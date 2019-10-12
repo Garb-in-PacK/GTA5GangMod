@@ -9,16 +9,16 @@ using GTA.Native;
 using System.Drawing;
 using GTA.Math;
 
-namespace GTA.GangAndTurfMod {
-	/// <summary>
-	/// this script controls most things related to gang behavior and relations.
-	/// </summary>
-	public class GangManager {
-		public List<GangAI> enemyGangs;
-		public GangData gangData;
-		public static GangManager instance;
+namespace GTA.GangAndTurfMod
+{
+    /// <summary>
+    /// this script controls most things related to gang behavior and relations.
+    /// </summary>
+    public static class GangManager {
+		public static List<GangAI> enemyGangs;
+		public static GangData gangData;
 
-		public Gang PlayerGang
+		public static Gang PlayerGang
 		{
 			get
 			{
@@ -35,26 +35,22 @@ namespace GTA.GangAndTurfMod {
 			}
 		}
 
-		private Gang cachedPlayerGang;
+		private static Gang cachedPlayerGang;
 
-		private int timeLastReward = 0;
-
-		//bools below are toggled true for one Tick if an Update function for the respective type was run
-		private bool gangAIUpdateRanThisFrame = false;
+		private static int timeLastReward = 0;
 
 
-		#region setup/save stuff
-		public class GangData {
+        /// <summary>
+        /// toggled true for one Tick if a GangAI update was run
+        /// </summary>
+        private static bool gangAIUpdateRanThisFrame = false;
 
-			public GangData() {
-				gangs = new List<Gang>();
-			}
+#region setup/save stuff
 
-			public List<Gang> gangs;
-		}
-		public GangManager() {
-			instance = this;
-
+        /// <summary>
+        /// makes all gang-related preparations, like loading the GangData file and setting relations
+        /// </summary>
+		public static void Init() {
 			enemyGangs = new List<GangAI>();
 
 			//classes below are all singletons, so no need to hold their ref here
@@ -89,7 +85,7 @@ namespace GTA.GangAndTurfMod {
 		/// basically sets relationship groups for all gangs, makes them hate each other and starts the AI for enemy gangs.
 		/// also runs a few consistency checks on the gangs, like if their stats are conforming to the limits defined in modoptions
 		/// </summary>
-		void SetUpAllGangs() {
+		private static void SetUpAllGangs() {
 			//set up the relationshipgroups
 			for (int i = 0; i < gangData.gangs.Count; i++) {
 				gangData.gangs[i].relationGroupIndex = World.AddRelationshipGroup(gangData.gangs[i].name);
@@ -127,7 +123,7 @@ namespace GTA.GangAndTurfMod {
 		/// sets relations between gangs to a certain level according to the aggressiveness
 		/// </summary>
 		/// <param name="aggrLevel"></param>
-		public void SetGangRelationsAccordingToAggrLevel(ModOptions.GangMemberAggressivenessMode aggrLevel) {
+		public static void SetGangRelationsAccordingToAggrLevel(ModOptions.GangMemberAggressivenessMode aggrLevel) {
 			Relationship targetRelationLevel = Relationship.Hate;
 			Gang excludedGang = null;
 			if (GangWarManager.instance.isOccurring) {
@@ -159,7 +155,7 @@ namespace GTA.GangAndTurfMod {
 			}
 		}
 
-		public void SetCopRelations(bool hate) {
+		public static void SetCopRelations(bool hate) {
 			int copHash = Function.Call<int>(Hash.GET_HASH_KEY, "COP");
 			int relationLevel = 3; //neutral
 			if (hate) relationLevel = 5; //hate
@@ -174,7 +170,7 @@ namespace GTA.GangAndTurfMod {
 		/// marks the gangData file as "dirty", making its data be saved in the next autosave check
 		/// </summary>
 		/// <param name="notifySuccess"></param>
-		public void SaveGangData(bool notifySuccess = true) {
+		public static void SaveGangData(bool notifySuccess = true) {
 			AutoSaver.instance.gangDataDirty = true;
 			if (notifySuccess) {
 				AutoSaver.instance.gangDataNotifySave = true;
@@ -183,7 +179,7 @@ namespace GTA.GangAndTurfMod {
 		#endregion
 
 
-		public void Tick() {
+		public static void Tick() {
 			TickGangs();
 		}
 
@@ -193,7 +189,7 @@ namespace GTA.GangAndTurfMod {
 		/// <summary>
 		/// this controls the gang AI decisions and rewards for the player and AI gangs
 		/// </summary>
-		void TickGangs() {
+		private static void TickGangs() {
 			gangAIUpdateRanThisFrame = false;
 			for (int i = 0; i < enemyGangs.Count; i++) {
 				enemyGangs[i].ticksSinceLastUpdate++;
@@ -233,7 +229,7 @@ namespace GTA.GangAndTurfMod {
 		/// <summary>
 		/// makes all AI gangs do an Update run immediately
 		/// </summary>
-		public void ForceTickAIGangs() {
+		public static void ForceTickAIGangs() {
 			for (int i = 0; i < enemyGangs.Count; i++) {
 				enemyGangs[i].Update();
 			}
@@ -245,7 +241,7 @@ namespace GTA.GangAndTurfMod {
 		/// </summary>
 		/// <param name="notifyMsg"></param>
 		/// <returns></returns>
-		public Gang CreateNewPlayerGang(bool notifyMsg = true) {
+		public static Gang CreateNewPlayerGang(bool notifyMsg = true) {
 			Gang playerGang = new Gang("Player's Gang", VehicleColor.BrushedGold, true);
 			//setup gangs
 			gangData.gangs.Add(playerGang);
@@ -263,14 +259,20 @@ namespace GTA.GangAndTurfMod {
 			return playerGang;
 		}
 
-		public Gang CreateNewEnemyGang(bool notifyMsg = true) {
+        /// <summary>
+        /// attempts to create a new AI Gang with random members and name,
+        /// using data from the memberPool and ModOptions
+        /// </summary>
+        /// <param name="notifyMsg"></param>
+        /// <returns></returns>
+		public static Gang CreateNewEnemyGang(bool notifyMsg = true) {
 			if (PotentialGangMember.MemberPool.memberList.Count <= 0) {
 				UI.Notify("Enemy gang creation failed: bad/empty/not found memberPool file. Try adding peds as potential members for AI gangs");
 				return null;
 			}
-			//set gang name from options
-			string gangName = "Gang";
-			do {
+            //set gang name from options
+            string gangName;
+            do {
 				gangName = string.Concat(RandoMath.GetRandomElementFromList(ModOptions.instance.possibleGangFirstNames), " ",
 				RandoMath.GetRandomElementFromList(ModOptions.instance.possibleGangLastNames));
 			} while (GetGangByName(gangName) != null);
@@ -279,9 +281,9 @@ namespace GTA.GangAndTurfMod {
 
 			//the new gang takes the wealthiest gang around as reference to define its starting money.
 			//that does not mean it will be the new wealthiest one, hehe (but it may)
-			Gang newGang = new Gang(gangName, RandoMath.GetRandomElementFromList(ModOptions.instance.GetGangColorTranslation(gangColor).vehicleColors),
+			Gang newGang = new Gang(gangName, RandoMath.GetRandomElementFromList(ModOptions.instance.GetGangColorTranslation(gangColor).VehicleColors),
 				false, (int)(RandoMath.Max(Game.Player.Money, GetWealthiestGang().moneyAvailable) * (RandoMath.CachedRandom.Next(1, 11) / 6.5f))) {
-				blipColor = RandoMath.GetRandomElementFromArray(ModOptions.instance.GetGangColorTranslation(gangColor).blipColors)
+				blipColor = RandoMath.GetRandomElementFromArray(ModOptions.instance.GetGangColorTranslation(gangColor).BlipColors)
 			};
 
 			GetMembersForGang(newGang);
@@ -310,7 +312,7 @@ namespace GTA.GangAndTurfMod {
 			return newGang;
 		}
 
-		public void GetMembersForGang(Gang targetGang) {
+		public static void GetMembersForGang(Gang targetGang) {
 			PotentialGangMember.MemberColor gangColor = ModOptions.instance.TranslateVehicleToMemberColor(targetGang.vehicleColor);
 			PotentialGangMember.DressStyle gangStyle = (PotentialGangMember.DressStyle)RandoMath.CachedRandom.Next(3);
 			for (int i = 0; i < RandoMath.CachedRandom.Next(2, 6); i++) {
@@ -325,7 +327,7 @@ namespace GTA.GangAndTurfMod {
 			}
 		}
 
-		public void KillGang(GangAI aiWatchingTheGang) {
+		public static void KillGang(GangAI aiWatchingTheGang) {
 			UI.Notify("The " + aiWatchingTheGang.watchedGang.name + " have been wiped out!");
 
 			//save the fallen gang in a file
@@ -347,7 +349,7 @@ namespace GTA.GangAndTurfMod {
 		///  so that the player can reuse their data in the future
 		/// </summary>
 		/// <param name="gangToAdd"></param>
-		public void AddGangToWipedOutList(Gang gangToAdd) {
+		public static void AddGangToWipedOutList(Gang gangToAdd) {
 			List<Gang> WOList = PersistenceHandler.LoadFromFile<List<Gang>>("wipedOutGangsList");
 			if (WOList == null) {
 				WOList = new List<Gang>();
@@ -356,7 +358,7 @@ namespace GTA.GangAndTurfMod {
 			PersistenceHandler.SaveToFile(WOList, "wipedOutGangsList");
 		}
 
-		public void GiveTurfRewardToGang(Gang targetGang) {
+		public static void GiveTurfRewardToGang(Gang targetGang) {
 
 			List<TurfZone> curGangZones = ZoneManager.instance.GetZonesControlledByGang(targetGang.name);
 			int zonesCount = curGangZones.Count;
@@ -370,7 +372,7 @@ namespace GTA.GangAndTurfMod {
 						rewardedCash += zoneReward;
 					}
 
-					MindControl.instance.AddOrSubtractMoneyToProtagonist(rewardedCash);
+					MindControl.AddOrSubtractMoneyToProtagonist(rewardedCash);
 					Function.Call(Hash.PLAY_SOUND, -1, "Virus_Eradicated", "LESTER1A_SOUNDS", 0, 0, 1);
 					UI.Notify("Money won from controlled zones: " + rewardedCash.ToString());
 				}
@@ -389,7 +391,7 @@ namespace GTA.GangAndTurfMod {
 		/// <summary>
 		/// adjust gangs' stats and weapons in order to conform with the ModOptions file
 		/// </summary>
-		public void AdjustGangsToModOptions() {
+		public static void AdjustGangsToModOptions() {
 			foreach(Gang g in gangData.gangs) {
 				g.AdjustStatsToModOptions();
 				g.AdjustWeaponChoicesToModOptions();
@@ -400,7 +402,7 @@ namespace GTA.GangAndTurfMod {
 		/// when the player asks to reset mod options, we must reset these update intervals because they
 		/// may have changed
 		/// </summary>
-		public void ResetGangUpdateIntervals() {
+		public static void ResetGangUpdateIntervals() {
 			for (int i = 0; i < enemyGangs.Count; i++) {
 				enemyGangs[i].ResetUpdateInterval();
 			}
@@ -411,7 +413,13 @@ namespace GTA.GangAndTurfMod {
 		#endregion
 
 		#region getters
-		public Gang GetGangByName(string name) {
+
+        /// <summary>
+        /// returns the Gang with the provided name... or null, if none match
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+		public static Gang GetGangByName(string name) {
 			for (int i = 0; i < gangData.gangs.Count; i++) {
 				if (gangData.gangs[i].name == name) {
 					return gangData.gangs[i];
@@ -420,7 +428,12 @@ namespace GTA.GangAndTurfMod {
 			return null;
 		}
 
-		public Gang GetGangByRelGroup(int relGroupIndex) {
+        /// <summary>
+        /// returns the gang using the specified relationGroupIndex... or null for no matches
+        /// </summary>
+        /// <param name="relGroupIndex"></param>
+        /// <returns></returns>
+		public static Gang GetGangByRelGroup(int relGroupIndex) {
 			for (int i = 0; i < gangData.gangs.Count; i++) {
 				if (gangData.gangs[i].relationGroupIndex == relGroupIndex) {
 					return gangData.gangs[i];
@@ -429,7 +442,12 @@ namespace GTA.GangAndTurfMod {
 			return null;
 		}
 
-		public GangAI GetGangAI(Gang targetGang) {
+        /// <summary>
+        /// returns the GangAI object for the targetGang (returns null for the player gang)
+        /// </summary>
+        /// <param name="targetGang"></param>
+        /// <returns></returns>
+		public static GangAI GetGangAI(Gang targetGang) {
 			for (int i = 0; i < enemyGangs.Count; i++) {
 				if (enemyGangs[i].watchedGang == targetGang) {
 					return enemyGangs[i];
@@ -442,7 +460,7 @@ namespace GTA.GangAndTurfMod {
 		/// returns the player's gang (it's better to use the PlayerGang property instead)
 		/// </summary>
 		/// <returns></returns>
-		private Gang GetPlayerGang() {
+		private static Gang GetPlayerGang() {
 			for (int i = 0; i < gangData.gangs.Count; i++) {
 				if (gangData.gangs[i].isPlayerOwned) {
 					return gangData.gangs[i];
@@ -455,7 +473,7 @@ namespace GTA.GangAndTurfMod {
 		/// returns the gang with the most stocked money
 		/// </summary>
 		/// <returns></returns>
-		public Gang GetWealthiestGang() {
+		public static Gang GetWealthiestGang() {
 			Gang pickedGang = null;
 
 			for (int i = 0; i < gangData.gangs.Count; i++) {
