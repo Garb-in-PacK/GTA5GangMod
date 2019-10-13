@@ -12,8 +12,9 @@ namespace GTA.GangAndTurfMod
     /// that way, when an AI gang is picking a color, it will pick members with a similar color
     /// </summary>
     [XmlInclude(typeof(FreemodePotentialGangMember))]
-    public class PotentialGangMember {
-       public enum DressStyle
+    public class PotentialGangMember
+    {
+        public enum DressStyle
         {
             business,
             street,
@@ -47,10 +48,11 @@ namespace GTA.GangAndTurfMod
         public MemberColor linkedColor;
 
         [XmlIgnore]
-        public static PotentialMemberPool MemberPool {
+        public static PotentialMemberPool MemberPool
+        {
             get
             {
-                if(memberPool == null)
+                if (memberPool == null)
                 {
                     memberPool = PersistenceHandler.LoadFromFile<PotentialMemberPool>("MemberPool");
 
@@ -60,7 +62,7 @@ namespace GTA.GangAndTurfMod
                         memberPool = new PotentialMemberPool();
                     }
                 }
-               
+
                 return memberPool;
             }
 
@@ -70,7 +72,7 @@ namespace GTA.GangAndTurfMod
 
         public PotentialGangMember(int modelHash, DressStyle myStyle, MemberColor linkedColor,
              int headDrawableIndex = -1, int headTextureIndex = -1, int hairDrawableIndex = -1,
-            int torsoDrawableIndex = -1,int torsoTextureIndex = -1, int legsDrawableIndex = -1, int legsTextureIndex = -1)
+            int torsoDrawableIndex = -1, int torsoTextureIndex = -1, int legsDrawableIndex = -1, int legsTextureIndex = -1)
         {
             this.modelHash = modelHash;
             this.myStyle = myStyle;
@@ -133,16 +135,16 @@ namespace GTA.GangAndTurfMod
                 Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, 2, hairDrawableIndex, randomHairTex, pedPalette);
             }
 
-            if(torsoDrawableIndex != -1 && torsoTextureIndex != -1)
+            if (torsoDrawableIndex != -1 && torsoTextureIndex != -1)
             {
                 Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, 3, torsoDrawableIndex, torsoTextureIndex, pedPalette);
             }
-            
-            if(legsDrawableIndex != -1 && legsTextureIndex != -1)
+
+            if (legsDrawableIndex != -1 && legsTextureIndex != -1)
             {
                 Function.Call(Hash.SET_PED_COMPONENT_VARIATION, targetPed, 4, legsDrawableIndex, legsTextureIndex, pedPalette);
             }
-            
+
         }
 
         public static bool AddMemberAndSavePool(PotentialGangMember newMember)
@@ -176,7 +178,7 @@ namespace GTA.GangAndTurfMod
         {
             PotentialGangMember returnedMember;
 
-            if(MemberPool.memberList.Count <= 0)
+            if (MemberPool.memberList.Count <= 0)
             {
                 UI.Notify("GTA5GangNTurfMod Warning: empty/bad memberpool file! Enemy gangs won't spawn");
                 return null;
@@ -189,11 +191,11 @@ namespace GTA.GangAndTurfMod
                 attempts++;
             } while ((returnedMember.linkedColor != color || returnedMember.myStyle != style) && attempts < 1000);
 
-            if(returnedMember.linkedColor != color || returnedMember.myStyle != style)
+            if (returnedMember.linkedColor != color || returnedMember.myStyle != style)
             {
                 //we couldnt find one randomly.
                 //lets try to find one the straightforward way then
-                for(int i = 0; i < MemberPool.memberList.Count; i++)
+                for (int i = 0; i < MemberPool.memberList.Count; i++)
                 {
                     returnedMember = MemberPool.memberList[i];
                     if (returnedMember.linkedColor == color && returnedMember.myStyle == style)

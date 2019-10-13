@@ -14,250 +14,285 @@ namespace GTA.GangAndTurfMod
     /// <summary>
     /// this script controls most things related to gang behavior and relations.
     /// </summary>
-    public static class GangManager {
-		public static List<GangAI> enemyGangs;
-		public static GangData gangData;
+    public static class GangManager
+    {
+        public static Gang PlayerGang
+        {
+            get
+            {
+                if (cachedPlayerGang == null)
+                {
+                    cachedPlayerGang = GetPlayerGang();
+                }
 
-		public static Gang PlayerGang
-		{
-			get
-			{
-				if (cachedPlayerGang == null) {
-					cachedPlayerGang = GetPlayerGang();
-				}
+                //if, somehow, we still don't have a player gang around, make a new one!
+                if (cachedPlayerGang == null)
+                {
+                    cachedPlayerGang = CreateNewPlayerGang();
+                }
 
-				//if, somehow, we still don't have a player gang around, make a new one!
-				if (cachedPlayerGang == null) {
-					cachedPlayerGang = CreateNewPlayerGang();
-				}
+                return cachedPlayerGang;
+            }
+        }
 
-				return cachedPlayerGang;
-			}
-		}
+        public static List<GangAI> EnemyGangs { get; private set; }
+        public static GangData GangData { get; private set; }
 
-		private static Gang cachedPlayerGang;
+        private static Gang cachedPlayerGang;
 
-		private static int timeLastReward = 0;
+        private static int timeLastReward = 0;
 
-
+        public static ModOptions ModOptions { get; set; }
         /// <summary>
         /// toggled true for one Tick if a GangAI update was run
         /// </summary>
         private static bool gangAIUpdateRanThisFrame = false;
 
-#region setup/save stuff
+        #region setup/save stuff
 
         /// <summary>
         /// makes all gang-related preparations, like loading the GangData file and setting relations
         /// </summary>
-		public static void Init() {
-			enemyGangs = new List<GangAI>();
+        public static void Init(ModOptions modOptions)
+        {
+            ModOptions = modOptions;
 
-			//classes below are all singletons, so no need to hold their ref here
-			new SpawnManager();
-			new ModOptions();
+            EnemyGangs = new List<GangAI>();
 
+            GangData = PersistenceHandler.LoadFromFile<GangData>("GangData");
+            if (GangData == null)
+            {
+                GangData = new GangData();
 
-			gangData = PersistenceHandler.LoadFromFile<GangData>("GangData");
-			if (gangData == null) {
-				gangData = new GangData();
+                //setup initial gangs... the player's and an enemy
+                CreateNewPlayerGang();
 
-				//setup initial gangs... the player's and an enemy
-				CreateNewPlayerGang();
+                CreateNewEnemyGang();
+            }
+            else
+            {
+                AdjustGangsToModOptions();
+            }
 
-				CreateNewEnemyGang();
-			}
-			else {
-				AdjustGangsToModOptions();
-			}
+            if (GangData.gangs.Count == 1 && ModOptions.GangsOptions.MaxCoexistingGangs > 1)
+            {
+                //we're alone.. add an enemy!
+                CreateNewEnemyGang();
+            }
 
-			if (gangData.gangs.Count == 1 && ModOptions.instance.maxCoexistingGangs > 1) {
-				//we're alone.. add an enemy!
-				CreateNewEnemyGang();
-			}
+            SetUpAllGangs();
 
-			SetUpAllGangs();
+            timeLastReward = ModCore.curGameTime;
 
-			timeLastReward = ModCore.curGameTime;
+        }
+        /// <summary>
+        /// basically sets relationship groups for all gangs, makes them hate each other and starts the AI for enemy gangs.
+        /// also runs a few consistency checks on the gangs, like if their stats are conforming to the limits defined in modoptions
+        /// </summary>
+        private static void SetUpAllGangs()
+        {
+            //set up the relationshipgroups
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                GangData.gangs[i].relationGroupIndex = World.AddRelationshipGroup(GangData.gangs[i].name);
 
-		}
-		/// <summary>
-		/// basically sets relationship groups for all gangs, makes them hate each other and starts the AI for enemy gangs.
-		/// also runs a few consistency checks on the gangs, like if their stats are conforming to the limits defined in modoptions
-		/// </summary>
-		private static void SetUpAllGangs() {
-			//set up the relationshipgroups
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				gangData.gangs[i].relationGroupIndex = World.AddRelationshipGroup(gangData.gangs[i].name);
+                //if the player owns this gang, we love him
+                if (GangData.gangs[i].isPlayerOwned)
+                {
+                    World.SetRelationshipBetweenGroups(Relationship.Companion, GangData.gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
+                    World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, GangData.gangs[i].relationGroupIndex);
+                }
+                else
+                {
+                    //since we're checking each gangs situation...
+                    //lets check if we don't have any member variation, which could be a problem
+                    if (GangData.gangs[i].memberVariations.Count == 0)
+                    {
+                        GetMembersForGang(GangData.gangs[i]);
+                    }
 
-				//if the player owns this gang, we love him
-				if (gangData.gangs[i].isPlayerOwned) {
-					World.SetRelationshipBetweenGroups(Relationship.Companion, gangData.gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
-					World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, gangData.gangs[i].relationGroupIndex);
-				}
-				else {
-					//since we're checking each gangs situation...
-					//lets check if we don't have any member variation, which could be a problem
-					if (gangData.gangs[i].memberVariations.Count == 0) {
-						GetMembersForGang(gangData.gangs[i]);
-					}
-
-					//lets also see if their colors are consistent
-					gangData.gangs[i].EnforceGangColorConsistency();
-
-
-					//add this gang to the enemy gangs
-					//and start the AI for it
-					enemyGangs.Add(new GangAI(gangData.gangs[i]));
-				}
-
-			}
-
-			//set gang relations...
-			SetGangRelationsAccordingToAggrLevel(ModOptions.instance.gangMemberAggressiveness);
-			//all gangs hate cops if set to very aggressive
-			SetCopRelations(ModOptions.instance.gangMemberAggressiveness == ModOptions.GangMemberAggressivenessMode.veryAgressive);
-		}
-
-		/// <summary>
-		/// sets relations between gangs to a certain level according to the aggressiveness
-		/// </summary>
-		/// <param name="aggrLevel"></param>
-		public static void SetGangRelationsAccordingToAggrLevel(ModOptions.GangMemberAggressivenessMode aggrLevel) {
-			Relationship targetRelationLevel = Relationship.Hate;
-			Gang excludedGang = null;
-			if (GangWarManager.instance.isOccurring) {
-				excludedGang = GangWarManager.instance.enemyGang;
-			}
-			switch (aggrLevel) {
-				case ModOptions.GangMemberAggressivenessMode.veryAgressive:
-					targetRelationLevel = Relationship.Hate;
-					break;
-				case ModOptions.GangMemberAggressivenessMode.agressive:
-					targetRelationLevel = Relationship.Dislike;
-					break;
-				case ModOptions.GangMemberAggressivenessMode.defensive:
-					targetRelationLevel = Relationship.Neutral;
-					break;
-			}
-			for (int i = gangData.gangs.Count - 1; i > -1; i--) {
-				for (int j = 0; j < i; j++) {
-					if ((gangData.gangs[i] != excludedGang || gangData.gangs[j] != PlayerGang) &&
-						(gangData.gangs[j] != excludedGang || gangData.gangs[i] != PlayerGang)) {
-						World.SetRelationshipBetweenGroups(targetRelationLevel, gangData.gangs[i].relationGroupIndex, gangData.gangs[j].relationGroupIndex);
-						World.SetRelationshipBetweenGroups(targetRelationLevel, gangData.gangs[j].relationGroupIndex, gangData.gangs[i].relationGroupIndex);
-					}
-				}
-				if (!gangData.gangs[i].isPlayerOwned && gangData.gangs[i] != excludedGang) {
-					World.SetRelationshipBetweenGroups(targetRelationLevel, gangData.gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
-					World.SetRelationshipBetweenGroups(targetRelationLevel, Game.Player.Character.RelationshipGroup, gangData.gangs[i].relationGroupIndex);
-				}
-			}
-		}
-
-		public static void SetCopRelations(bool hate) {
-			int copHash = Function.Call<int>(Hash.GET_HASH_KEY, "COP");
-			int relationLevel = 3; //neutral
-			if (hate) relationLevel = 5; //hate
-
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, copHash, gangData.gangs[i].relationGroupIndex);
-				Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, gangData.gangs[i].relationGroupIndex, copHash);
-			}
-		}
-
-		/// <summary>
-		/// marks the gangData file as "dirty", making its data be saved in the next autosave check
-		/// </summary>
-		/// <param name="notifySuccess"></param>
-		public static void SaveGangData(bool notifySuccess = true) {
-			AutoSaver.instance.gangDataDirty = true;
-			if (notifySuccess) {
-				AutoSaver.instance.gangDataNotifySave = true;
-			}
-		}
-		#endregion
+                    //lets also see if their colors are consistent
+                    GangData.gangs[i].EnforceGangColorConsistency();
 
 
-		public static void Tick() {
-			TickGangs();
-		}
+                    //add this gang to the enemy gangs
+                    //and start the AI for it
+                    EnemyGangs.Add(new GangAI(GangData.gangs[i]));
+                }
 
-		#region gang general control stuff
+            }
+
+            //set gang relations...
+            SetGangRelationsAccordingToAggrLevel(ModOptions.MemberAIOptions.GangMemberAggressiveness);
+            //all gangs hate cops if set to very aggressive
+            SetCopRelations(ModOptions.MemberAIOptions.GangMemberAggressiveness == MemberAIOptions.AggressivenessMode.veryAggressive);
+        }
+
+        /// <summary>
+        /// sets relations between gangs to a certain level according to the aggressiveness
+        /// </summary>
+        /// <param name="aggrLevel"></param>
+        public static void SetGangRelationsAccordingToAggrLevel(MemberAIOptions.AggressivenessMode aggrLevel)
+        {
+            Relationship targetRelationLevel = Relationship.Hate;
+            Gang excludedGang = null;
+            if (GangWarManager.instance.isOccurring)
+            {
+                excludedGang = GangWarManager.instance.enemyGang;
+            }
+            switch (aggrLevel)
+            {
+                case MemberAIOptions.AggressivenessMode.veryAggressive:
+                    targetRelationLevel = Relationship.Hate;
+                    break;
+                case MemberAIOptions.AggressivenessMode.aggressive:
+                    targetRelationLevel = Relationship.Dislike;
+                    break;
+                case MemberAIOptions.AggressivenessMode.defensive:
+                    targetRelationLevel = Relationship.Neutral;
+                    break;
+            }
+            for (int i = GangData.gangs.Count - 1; i > -1; i--)
+            {
+                for (int j = 0; j < i; j++)
+                {
+                    if ((GangData.gangs[i] != excludedGang || GangData.gangs[j] != PlayerGang) &&
+                        (GangData.gangs[j] != excludedGang || GangData.gangs[i] != PlayerGang))
+                    {
+                        World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.gangs[i].relationGroupIndex, GangData.gangs[j].relationGroupIndex);
+                        World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.gangs[j].relationGroupIndex, GangData.gangs[i].relationGroupIndex);
+                    }
+                }
+                if (!GangData.gangs[i].isPlayerOwned && GangData.gangs[i] != excludedGang)
+                {
+                    World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
+                    World.SetRelationshipBetweenGroups(targetRelationLevel, Game.Player.Character.RelationshipGroup, GangData.gangs[i].relationGroupIndex);
+                }
+            }
+        }
+
+        public static void SetCopRelations(bool hate)
+        {
+            int copHash = Function.Call<int>(Hash.GET_HASH_KEY, "COP");
+            int relationLevel = 3; //neutral
+            if (hate) relationLevel = 5; //hate
+
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, copHash, GangData.gangs[i].relationGroupIndex);
+                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, GangData.gangs[i].relationGroupIndex, copHash);
+            }
+        }
+
+        /// <summary>
+        /// marks the gangData file as "dirty", making its data be saved in the next autosave check
+        /// </summary>
+        /// <param name="notifySuccess"></param>
+        public static void SaveGangData(bool notifySuccess = true)
+        {
+            AutoSaver.instance.gangDataDirty = true;
+            if (notifySuccess)
+            {
+                AutoSaver.instance.gangDataNotifySave = true;
+            }
+        }
+        #endregion
 
 
-		/// <summary>
-		/// this controls the gang AI decisions and rewards for the player and AI gangs
-		/// </summary>
-		private static void TickGangs() {
-			gangAIUpdateRanThisFrame = false;
-			for (int i = 0; i < enemyGangs.Count; i++) {
-				enemyGangs[i].ticksSinceLastUpdate++;
-				if (!gangAIUpdateRanThisFrame) {
-					if (enemyGangs[i].ticksSinceLastUpdate >= enemyGangs[i].ticksBetweenUpdates) {
-						enemyGangs[i].ticksSinceLastUpdate = 0 - RandoMath.CachedRandom.Next(enemyGangs[i].ticksBetweenUpdates / 3);
-						enemyGangs[i].Update();
-						//lets also check if there aren't too many gangs around
-						//if there aren't, we might create a new one...
-						if (enemyGangs.Count < ModOptions.instance.maxCoexistingGangs - 1) {
-							if (RandoMath.CachedRandom.Next(enemyGangs.Count) == 0) {
-								Gang createdGang = CreateNewEnemyGang();
-								if (createdGang != null) {
-									enemyGangs.Add(new GangAI(createdGang));
-								}
+        public static void Tick()
+        {
+            TickGangs();
+        }
 
-							}
-						}
+        #region gang general control stuff
 
-						gangAIUpdateRanThisFrame = true; //max is one update per tick
-					}
-				}
 
-			}
+        /// <summary>
+        /// this controls the gang AI decisions and rewards for the player and AI gangs
+        /// </summary>
+        private static void TickGangs()
+        {
+            gangAIUpdateRanThisFrame = false;
+            for (int i = 0; i < EnemyGangs.Count; i++)
+            {
+                EnemyGangs[i].ticksSinceLastUpdate++;
+                if (!gangAIUpdateRanThisFrame)
+                {
+                    if (EnemyGangs[i].ticksSinceLastUpdate >= EnemyGangs[i].ticksBetweenUpdates)
+                    {
+                        EnemyGangs[i].ticksSinceLastUpdate = 0 - RandoMath.CachedRandom.Next(EnemyGangs[i].ticksBetweenUpdates / 3);
+                        EnemyGangs[i].Update();
+                        //lets also check if there aren't too many gangs around
+                        //if there aren't, we might create a new one...
+                        if (EnemyGangs.Count < ModOptions.GangsOptions.MaxCoexistingGangs - 1)
+                        {
+                            if (RandoMath.CachedRandom.Next(EnemyGangs.Count) == 0)
+                            {
+                                Gang createdGang = CreateNewEnemyGang();
+                                if (createdGang != null)
+                                {
+                                    EnemyGangs.Add(new GangAI(createdGang));
+                                }
 
-			if (ModCore.curGameTime - timeLastReward > ModOptions.instance.msTimeBetweenTurfRewards) {
-				timeLastReward = ModCore.curGameTime;
-				for (int i = 0; i < enemyGangs.Count; i++) {
-					GiveTurfRewardToGang(enemyGangs[i].watchedGang);
-				}
+                            }
+                        }
 
-				//this also counts for the player's gang
-				GiveTurfRewardToGang(PlayerGang);
-			}
-		}
+                        gangAIUpdateRanThisFrame = true; //max is one update per tick
+                    }
+                }
 
-		/// <summary>
-		/// makes all AI gangs do an Update run immediately
-		/// </summary>
-		public static void ForceTickAIGangs() {
-			for (int i = 0; i < enemyGangs.Count; i++) {
-				enemyGangs[i].Update();
-			}
-		}
+            }
 
-		/// <summary>
-		/// creates a new "player's gang" (there should be only one!)
-		/// and adds it to the gangdata gangs list
-		/// </summary>
-		/// <param name="notifyMsg"></param>
-		/// <returns></returns>
-		public static Gang CreateNewPlayerGang(bool notifyMsg = true) {
-			Gang playerGang = new Gang("Player's Gang", VehicleColor.BrushedGold, true);
-			//setup gangs
-			gangData.gangs.Add(playerGang);
+            if (ModCore.curGameTime - timeLastReward > ModOptions.ZoneOptions.MsTimeBetweenTurfRewards)
+            {
+                timeLastReward = ModCore.curGameTime;
+                for (int i = 0; i < EnemyGangs.Count; i++)
+                {
+                    GiveTurfRewardToGang(EnemyGangs[i].WatchedGang);
+                }
 
-			playerGang.blipColor = (int)BlipColor.Yellow;
+                //this also counts for the player's gang
+                GiveTurfRewardToGang(PlayerGang);
+            }
+        }
 
-			if (ModOptions.instance.gangsStartWithPistols) {
-				playerGang.gangWeaponHashes.Add(WeaponHash.Pistol);
-			}
+        /// <summary>
+        /// makes all AI gangs do an Update run immediately
+        /// </summary>
+        public static void ForceTickAIGangs()
+        {
+            for (int i = 0; i < EnemyGangs.Count; i++)
+            {
+                EnemyGangs[i].Update();
+            }
+        }
 
-			if (notifyMsg) {
-				UI.Notify("Created new gang for the player!");
-			}
+        /// <summary>
+        /// creates a new "player's gang" (there should be only one!)
+        /// and adds it to the gangdata gangs list
+        /// </summary>
+        /// <param name="notifyMsg"></param>
+        /// <returns></returns>
+        public static Gang CreateNewPlayerGang(bool notifyMsg = true)
+        {
+            Gang playerGang = new Gang("Player's Gang", VehicleColor.BrushedGold, true);
+            //setup gangs
+            GangData.gangs.Add(playerGang);
 
-			return playerGang;
-		}
+            playerGang.blipColor = (int)BlipColor.Yellow;
+
+            if (ModOptions.GangsOptions.GangsStartWithPistols)
+            {
+                playerGang.gangWeaponHashes.Add(WeaponHash.Pistol);
+            }
+
+            if (notifyMsg)
+            {
+                UI.Notify("Created new gang for the player!");
+            }
+
+            return playerGang;
+        }
 
         /// <summary>
         /// attempts to create a new AI Gang with random members and name,
@@ -265,232 +300,280 @@ namespace GTA.GangAndTurfMod
         /// </summary>
         /// <param name="notifyMsg"></param>
         /// <returns></returns>
-		public static Gang CreateNewEnemyGang(bool notifyMsg = true) {
-			if (PotentialGangMember.MemberPool.memberList.Count <= 0) {
-				UI.Notify("Enemy gang creation failed: bad/empty/not found memberPool file. Try adding peds as potential members for AI gangs");
-				return null;
-			}
+		public static Gang CreateNewEnemyGang(bool notifyMsg = true)
+        {
+            ModOptions.GangColorsOptions.EnforceColorsIntegrity();
+
+            if (PotentialGangMember.MemberPool.memberList.Count <= 0)
+            {
+                UI.Notify("Enemy gang creation failed: bad/empty/not found memberPool file. Try adding peds as potential members for AI gangs");
+                return null;
+            }
             //set gang name from options
             string gangName;
-            do {
-				gangName = string.Concat(RandoMath.GetRandomElementFromList(ModOptions.instance.possibleGangFirstNames), " ",
-				RandoMath.GetRandomElementFromList(ModOptions.instance.possibleGangLastNames));
-			} while (GetGangByName(gangName) != null);
+            do
+            {
+                gangName = string.Concat(RandoMath.GetRandomElementFromList(ModOptions.GangNamesOptions.PossibleGangFirstNames), " ",
+                RandoMath.GetRandomElementFromList(ModOptions.GangNamesOptions.PossibleGangLastNames));
+            } while (GetGangByName(gangName) != null);
 
-			PotentialGangMember.MemberColor gangColor = (PotentialGangMember.MemberColor)RandoMath.CachedRandom.Next(9);
+            PotentialGangMember.MemberColor gangColor = (PotentialGangMember.MemberColor)RandoMath.CachedRandom.Next(9);
 
-			//the new gang takes the wealthiest gang around as reference to define its starting money.
-			//that does not mean it will be the new wealthiest one, hehe (but it may)
-			Gang newGang = new Gang(gangName, RandoMath.GetRandomElementFromList(ModOptions.instance.GetGangColorTranslation(gangColor).VehicleColors),
-				false, (int)(RandoMath.Max(Game.Player.Money, GetWealthiestGang().moneyAvailable) * (RandoMath.CachedRandom.Next(1, 11) / 6.5f))) {
-				blipColor = RandoMath.GetRandomElementFromArray(ModOptions.instance.GetGangColorTranslation(gangColor).BlipColors)
-			};
+            //the new gang takes the wealthiest gang around as reference to define its starting money.
+            //that does not mean it will be the new wealthiest one, hehe (but it may)
+            Gang newGang = new Gang(gangName, RandoMath.GetRandomElementFromList(ModOptions.GangColorsOptions.GetGangColorTranslation(gangColor).VehicleColors),
+                false, (int)(RandoMath.Max(Game.Player.Money, GetWealthiestGang().moneyAvailable) * (RandoMath.CachedRandom.Next(1, 11) / 6.5f)))
+            {
+                blipColor = RandoMath.GetRandomElementFromArray(ModOptions.GangColorsOptions.GetGangColorTranslation(gangColor).BlipColors)
+            };
 
-			GetMembersForGang(newGang);
+            GetMembersForGang(newGang);
 
-			//relations...
-			newGang.relationGroupIndex = World.AddRelationshipGroup(gangName);
+            //relations...
+            newGang.relationGroupIndex = World.AddRelationshipGroup(gangName);
 
-			World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, Game.Player.Character.RelationshipGroup);
-			World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, newGang.relationGroupIndex);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, newGang.relationGroupIndex);
 
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				World.SetRelationshipBetweenGroups(Relationship.Hate, gangData.gangs[i].relationGroupIndex, newGang.relationGroupIndex);
-				World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, gangData.gangs[i].relationGroupIndex);
-			}
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                World.SetRelationshipBetweenGroups(Relationship.Hate, GangData.gangs[i].relationGroupIndex, newGang.relationGroupIndex);
+                World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, GangData.gangs[i].relationGroupIndex);
+            }
 
-			gangData.gangs.Add(newGang);
+            GangData.gangs.Add(newGang);
 
-			newGang.GetPistolIfOptionsRequire();
+            newGang.GetPistolIfOptionsRequire();
 
-			SaveGangData();
-			if (notifyMsg) {
-				UI.Notify("The " + gangName + " have entered San Andreas!");
-			}
+            SaveGangData();
+            if (notifyMsg)
+            {
+                UI.Notify("The " + gangName + " have entered San Andreas!");
+            }
 
 
-			return newGang;
-		}
+            return newGang;
+        }
 
-		public static void GetMembersForGang(Gang targetGang) {
-			PotentialGangMember.MemberColor gangColor = ModOptions.instance.TranslateVehicleToMemberColor(targetGang.vehicleColor);
-			PotentialGangMember.DressStyle gangStyle = (PotentialGangMember.DressStyle)RandoMath.CachedRandom.Next(3);
-			for (int i = 0; i < RandoMath.CachedRandom.Next(2, 6); i++) {
-				PotentialGangMember newMember = PotentialGangMember.GetMemberFromPool(gangStyle, gangColor);
-				if (newMember != null) {
-					targetGang.AddMemberVariation(newMember);
-				}
-				else {
-					break;
-				}
+        public static void GetMembersForGang(Gang targetGang)
+        {
+            if (targetGang == null) throw new ArgumentNullException(nameof(targetGang));
 
-			}
-		}
+            PotentialGangMember.MemberColor gangColor = ModOptions.GangColorsOptions.TranslateVehicleToMemberColor(targetGang.vehicleColor);
+            PotentialGangMember.DressStyle gangStyle = (PotentialGangMember.DressStyle)RandoMath.CachedRandom.Next(3);
+            for (int i = 0; i < RandoMath.CachedRandom.Next(2, 6); i++)
+            {
+                PotentialGangMember newMember = PotentialGangMember.GetMemberFromPool(gangStyle, gangColor);
+                if (newMember != null)
+                {
+                    targetGang.AddMemberVariation(newMember);
+                }
+                else
+                {
+                    break;
+                }
 
-		public static void KillGang(GangAI aiWatchingTheGang) {
-			UI.Notify("The " + aiWatchingTheGang.watchedGang.name + " have been wiped out!");
+            }
+        }
 
-			//save the fallen gang in a file
-			AddGangToWipedOutList(aiWatchingTheGang.watchedGang);
-			gangData.gangs.Remove(aiWatchingTheGang.watchedGang);
-			enemyGangs.Remove(aiWatchingTheGang);
-			if (enemyGangs.Count == 0 && ModOptions.instance.maxCoexistingGangs > 1) {
-				//create a new gang right away... but do it silently to not demotivate the player too much
-				Gang createdGang = CreateNewEnemyGang(false);
-				if (createdGang != null) {
-					enemyGangs.Add(new GangAI(createdGang));
-				}
-			}
-			SaveGangData(false);
-		}
+        public static void KillGang(GangAI aiWatchingTheGang)
+        {
+            if (aiWatchingTheGang == null) throw new ArgumentNullException(nameof(aiWatchingTheGang));
 
-		/// <summary>
-		/// adds the gang to a xml file that contains a list of gangs that have been wiped out,
-		///  so that the player can reuse their data in the future
-		/// </summary>
-		/// <param name="gangToAdd"></param>
-		public static void AddGangToWipedOutList(Gang gangToAdd) {
-			List<Gang> WOList = PersistenceHandler.LoadFromFile<List<Gang>>("wipedOutGangsList");
-			if (WOList == null) {
-				WOList = new List<Gang>();
-			}
-			WOList.Add(gangToAdd);
-			PersistenceHandler.SaveToFile(WOList, "wipedOutGangsList");
-		}
+            UI.Notify("The " + aiWatchingTheGang.WatchedGang.name + " have been wiped out!");
 
-		public static void GiveTurfRewardToGang(Gang targetGang) {
+            //save the fallen gang in a file
+            AddGangToWipedOutList(aiWatchingTheGang.WatchedGang);
+            GangData.gangs.Remove(aiWatchingTheGang.WatchedGang);
+            EnemyGangs.Remove(aiWatchingTheGang);
+            if (EnemyGangs.Count == 0 && ModOptions.GangsOptions.MaxCoexistingGangs > 1)
+            {
+                //create a new gang right away... but do it silently to not demotivate the player too much
+                Gang createdGang = CreateNewEnemyGang(false);
+                if (createdGang != null)
+                {
+                    EnemyGangs.Add(new GangAI(createdGang));
+                }
+            }
+            SaveGangData(false);
+        }
 
-			List<TurfZone> curGangZones = ZoneManager.instance.GetZonesControlledByGang(targetGang.name);
-			int zonesCount = curGangZones.Count;
-			if (targetGang.isPlayerOwned) {
-				if (curGangZones.Count > 0) {
-					int rewardedCash = 0;
+        /// <summary>
+        /// adds the gang to a xml file that contains a list of gangs that have been wiped out,
+        ///  so that the player can reuse their data in the future
+        /// </summary>
+        /// <param name="gangToAdd"></param>
+        public static void AddGangToWipedOutList(Gang gangToAdd)
+        {
+            List<Gang> WOList = PersistenceHandler.LoadFromFile<List<Gang>>("wipedOutGangsList");
+            if (WOList == null)
+            {
+                WOList = new List<Gang>();
+            }
+            WOList.Add(gangToAdd);
+            PersistenceHandler.SaveToFile(WOList, "wipedOutGangsList");
+        }
 
-					for (int i = 0; i < zonesCount; i++) {
-						int zoneReward = GangCalculations.CalculateRewardForZone(curGangZones[i], zonesCount);
+        public static void GiveTurfRewardToGang(Gang targetGang)
+        {
+            if (targetGang == null) throw new ArgumentNullException(nameof(targetGang));
 
-						rewardedCash += zoneReward;
-					}
+            List<TurfZone> curGangZones = ZoneManager.instance.GetZonesControlledByGang(targetGang.name);
+            int zonesCount = curGangZones.Count;
+            if (targetGang.isPlayerOwned)
+            {
+                if (curGangZones.Count > 0)
+                {
+                    int rewardedCash = 0;
 
-					MindControl.AddOrSubtractMoneyToProtagonist(rewardedCash);
-					Function.Call(Hash.PLAY_SOUND, -1, "Virus_Eradicated", "LESTER1A_SOUNDS", 0, 0, 1);
-					UI.Notify("Money won from controlled zones: " + rewardedCash.ToString());
-				}
-			}
-			else {
-				for (int i = 0; i < curGangZones.Count; i++) {
-					targetGang.moneyAvailable += (int)
-						(GangCalculations.CalculateRewardForZone(curGangZones[i], zonesCount) * 
-						ModOptions.instance.extraProfitForAIGangsFactor);
-				}
+                    for (int i = 0; i < zonesCount; i++)
+                    {
+                        int zoneReward = GangCalculations.CalculateRewardForZone(curGangZones[i], zonesCount);
 
-			}
+                        rewardedCash += zoneReward;
+                    }
 
-		}
+                    MindControl.AddOrSubtractMoneyToProtagonist(rewardedCash);
+                    Function.Call(Hash.PLAY_SOUND, -1, "Virus_Eradicated", "LESTER1A_SOUNDS", 0, 0, 1);
+                    UI.Notify("Money won from controlled zones: " + rewardedCash.ToString());
+                }
+            }
+            else
+            {
+                for (int i = 0; i < curGangZones.Count; i++)
+                {
+                    targetGang.moneyAvailable += (int)
+                        (GangCalculations.CalculateRewardForZone(curGangZones[i], zonesCount) *
+                        ModOptions.GangAIOptions.ExtraProfitForAIGangsFactor);
+                }
 
-		/// <summary>
-		/// adjust gangs' stats and weapons in order to conform with the ModOptions file
-		/// </summary>
-		public static void AdjustGangsToModOptions() {
-			foreach(Gang g in gangData.gangs) {
-				g.AdjustStatsToModOptions();
-				g.AdjustWeaponChoicesToModOptions();
-			}
-		}
+            }
 
-		/// <summary>
-		/// when the player asks to reset mod options, we must reset these update intervals because they
-		/// may have changed
-		/// </summary>
-		public static void ResetGangUpdateIntervals() {
-			for (int i = 0; i < enemyGangs.Count; i++) {
-				enemyGangs[i].ResetUpdateInterval();
-			}
+        }
 
-			SpawnManager.instance.ResetSpawnedsUpdateInterval();
-		}
+        /// <summary>
+        /// adjust gangs' stats and weapons in order to conform with the ModOptions file
+        /// </summary>
+        public static void AdjustGangsToModOptions()
+        {
+            foreach (Gang g in GangData.gangs)
+            {
+                g.AdjustStatsToModOptions();
+                g.AdjustWeaponChoicesToModOptions();
+            }
+        }
 
-		#endregion
+        /// <summary>
+        /// when the player asks to reset mod options, we must reset these update intervals because they
+        /// may have changed
+        /// </summary>
+        public static void ResetGangUpdateIntervals()
+        {
+            for (int i = 0; i < EnemyGangs.Count; i++)
+            {
+                EnemyGangs[i].ResetUpdateInterval();
+            }
 
-		#region getters
+            SpawnManager.instance.ResetSpawnedsUpdateInterval();
+        }
+
+        #endregion
+
+        #region getters
 
         /// <summary>
         /// returns the Gang with the provided name... or null, if none match
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-		public static Gang GetGangByName(string name) {
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				if (gangData.gangs[i].name == name) {
-					return gangData.gangs[i];
-				}
-			}
-			return null;
-		}
+        public static Gang GetGangByName(string name)
+        {
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                if (GangData.gangs[i].name == name)
+                {
+                    return GangData.gangs[i];
+                }
+            }
+            return null;
+        }
 
         /// <summary>
         /// returns the gang using the specified relationGroupIndex... or null for no matches
         /// </summary>
         /// <param name="relGroupIndex"></param>
         /// <returns></returns>
-		public static Gang GetGangByRelGroup(int relGroupIndex) {
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				if (gangData.gangs[i].relationGroupIndex == relGroupIndex) {
-					return gangData.gangs[i];
-				}
-			}
-			return null;
-		}
+		public static Gang GetGangByRelGroup(int relGroupIndex)
+        {
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                if (GangData.gangs[i].relationGroupIndex == relGroupIndex)
+                {
+                    return GangData.gangs[i];
+                }
+            }
+            return null;
+        }
 
         /// <summary>
         /// returns the GangAI object for the targetGang (returns null for the player gang)
         /// </summary>
         /// <param name="targetGang"></param>
         /// <returns></returns>
-		public static GangAI GetGangAI(Gang targetGang) {
-			for (int i = 0; i < enemyGangs.Count; i++) {
-				if (enemyGangs[i].watchedGang == targetGang) {
-					return enemyGangs[i];
-				}
-			}
-			return null;
-		}
+		public static GangAI GetGangAI(Gang targetGang)
+        {
+            for (int i = 0; i < EnemyGangs.Count; i++)
+            {
+                if (EnemyGangs[i].WatchedGang == targetGang)
+                {
+                    return EnemyGangs[i];
+                }
+            }
+            return null;
+        }
 
-		/// <summary>
-		/// returns the player's gang (it's better to use the PlayerGang property instead)
-		/// </summary>
-		/// <returns></returns>
-		private static Gang GetPlayerGang() {
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				if (gangData.gangs[i].isPlayerOwned) {
-					return gangData.gangs[i];
-				}
-			}
-			return null;
-		}
+        /// <summary>
+        /// returns the player's gang (it's better to use the PlayerGang property instead)
+        /// </summary>
+        /// <returns></returns>
+        private static Gang GetPlayerGang()
+        {
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                if (GangData.gangs[i].isPlayerOwned)
+                {
+                    return GangData.gangs[i];
+                }
+            }
+            return null;
+        }
 
-		/// <summary>
-		/// returns the gang with the most stocked money
-		/// </summary>
-		/// <returns></returns>
-		public static Gang GetWealthiestGang() {
-			Gang pickedGang = null;
+        /// <summary>
+        /// returns the gang with the most stocked money
+        /// </summary>
+        /// <returns></returns>
+        public static Gang GetWealthiestGang()
+        {
+            Gang pickedGang = null;
 
-			for (int i = 0; i < gangData.gangs.Count; i++) {
-				if (pickedGang != null) {
-					if (gangData.gangs[i].moneyAvailable > pickedGang.moneyAvailable)
-						pickedGang = gangData.gangs[i];
-				}
-				else {
-					pickedGang = gangData.gangs[i];
-				}
-			}
+            for (int i = 0; i < GangData.gangs.Count; i++)
+            {
+                if (pickedGang != null)
+                {
+                    if (GangData.gangs[i].moneyAvailable > pickedGang.moneyAvailable)
+                        pickedGang = GangData.gangs[i];
+                }
+                else
+                {
+                    pickedGang = GangData.gangs[i];
+                }
+            }
 
-			return pickedGang;
-		}
+            return pickedGang;
+        }
 
-		#endregion
+        #endregion
 
-	}
+    }
 
 }

@@ -6,230 +6,271 @@ using System.Threading.Tasks;
 using GTA.Native;
 using GTA.Math;
 
-namespace GTA.GangAndTurfMod {
-	public class SpawnedGangMember : UpdatedClass {
+namespace GTA.GangAndTurfMod
+{
+    public class SpawnedGangMember : UpdatedClass
+    {
 
-		private static readonly string[] idleAnims =
-		{
-			"WORLD_HUMAN_SMOKING",
-			"WORLD_HUMAN_HANG_OUT_STREET",
-			"WORLD_HUMAN_DRINKING",
-			"WORLD_HUMAN_GUARD_PATROL",
-			"WORLD_HUMAN_STAND_GUARD",
-			"WORLD_HUMAN_STAND_IMPATIENT",
-			"WORLD_HUMAN_STAND_MOBILE",
-		};
+        private static readonly string[] idleAnims =
+        {
+            "WORLD_HUMAN_SMOKING",
+            "WORLD_HUMAN_HANG_OUT_STREET",
+            "WORLD_HUMAN_DRINKING",
+            "WORLD_HUMAN_GUARD_PATROL",
+            "WORLD_HUMAN_STAND_GUARD",
+            "WORLD_HUMAN_STAND_IMPATIENT",
+            "WORLD_HUMAN_STAND_MOBILE",
+        };
 
-		public Ped watchedPed;
+        public Ped watchedPed;
 
-		public Gang myGang;
+        public Gang myGang;
 
-		public enum MemberStatus {
-			none,
-			onFootThinking,
-			combat,
-			inVehicle
-		}
+        public enum MemberStatus
+        {
+            none,
+            onFootThinking,
+            combat,
+            inVehicle
+        }
 
-		private const int TICKS_BETWEEN_IDLE_CHANGE = 10;
+        private const int TICKS_BETWEEN_IDLE_CHANGE = 10;
 
-		private int ticksSinceLastIdleChange = 0;
+        private int ticksSinceLastIdleChange = 0;
 
-		public MemberStatus curStatus = MemberStatus.none;
+        public MemberStatus curStatus = MemberStatus.none;
 
-		public bool hasDriveByGun = false;
+        public bool hasDriveByGun = false;
 
         public delegate void OnMemberDied(SpawnedGangMember deadMember);
 
+        public static OnMemberDied OnMemberDiedEvent { get; set; }
+
+        public override void Update()
+        {
+            Logger.Log("member update: start", 5);
+            if ((watchedPed.IsInAir) || MindControl.CurrentPlayerCharacter == watchedPed)
+            {
+                Logger.Log("member update: end (isPlayer or etc)", 5);
+                return;
+            }
+            if (curStatus != MemberStatus.inVehicle)
+            {
+                watchedPed.BlockPermanentEvents = false;
+                if (watchedPed.Position.DistanceTo2D(MindControl.CurrentPlayerCharacter.Position) >
+               ModOptions.Instance.MaxDistanceMemberSpawnFromPlayer * 1.5f)
+                {
+                    //we're too far to be important
+                    Die();
+                    Logger.Log("member update: end (too far, despawn)", 5);
+                    return;
+                }
+
+                if (RandoMath.RandomBool() && !watchedPed.IsInGroup && !watchedPed.IsInCombat)
+                {
+                    if (GangWarManager.instance.isOccurring && GangWarManager.instance.playerNearWarzone)
+                    {
+                        //instead of idling while in a war, members should head for one of the spawn points
+                        if (myGang == GangManager.PlayerGang)
+                        {
+                            if (GangWarManager.instance.enemySpawnPoints != null)
+                            {
+                                Vector3 ourDestination = RandoMath.GetRandomElementFromArray(GangWarManager.instance.enemySpawnPoints);
+                                if (ourDestination != Vector3.Zero)
+                                {
+                                    watchedPed.Task.RunTo(ourDestination);
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            if (GangWarManager.instance.alliedSpawnPoints != null)
+                            {
+                                Vector3 ourDestination = RandoMath.GetRandomElementFromArray(GangWarManager.instance.alliedSpawnPoints);
+                                if (ourDestination != Vector3.Zero)
+                                {
+                                    watchedPed.Task.RunTo(ourDestination);
+                                }
+                            }
+                        }
+
+                        curStatus = MemberStatus.onFootThinking;
+                        ticksSinceLastIdleChange = 0;
+                    }
+                    else
+                    {
+                        if (curStatus != MemberStatus.onFootThinking || ticksSinceLastIdleChange > TICKS_BETWEEN_IDLE_CHANGE)
+                        {
+                            curStatus = MemberStatus.onFootThinking;
+                            if (RandoMath.RandomBool())
+                            {
+                                watchedPed.Task.WanderAround();
+                            }
+                            else
+                            {
+                                DoAnIdleAnim();
+                            }
+                            ticksSinceLastIdleChange = 0 - RandoMath.CachedRandom.Next(10);
+                        }
+                        else
+                        {
+                            ticksSinceLastIdleChange++;
+                        }
+                    }
+                }
+
+
+
+
+            }
+            else
+            {
+                if (watchedPed.IsInVehicle())
+                {
+                    Vehicle curVehicle = watchedPed.CurrentVehicle;
+                    if (!curVehicle.IsPersistent) //if our vehicle has reached its destination (= no longer persistent, no longer with driver AI attached)...
+                    {
+                        if (watchedPed.Position.DistanceTo2D(MindControl.CurrentPlayerCharacter.Position) >
+               ModOptions.Instance.MaxDistanceCarSpawnFromPlayer * 3)
+                        {
+                            //we're too far to be important
+                            Die();
+                            Logger.Log("member update: end (in vehicle: too far, despawn)", 5);
+                            return;
+                        }
+
+                        if (curVehicle.IsSeatFree(VehicleSeat.Driver))
+                        {
+                            //possibly leave the vehicle if the driver has left already
+                            if (RandoMath.RandomBool())
+                            {
+                                watchedPed.Task.LeaveVehicle();
+                            }
+                        }
+                    }
+
+                }
+                else
+                {
+                    curStatus = MemberStatus.none;
+                }
+
+            }
+
+            if (!watchedPed.IsAlive)
+            {
+                //TODO use onDied delegate here
+                if (GangWarManager.instance.isOccurring)
+                {
+                    if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroupIndex)
+                    {
+                        //enemy down
+                        GangWarManager.instance.OnEnemyDeath();
+                    }
+                    else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex)
+                    {
+                        //ally down
+                        GangWarManager.instance.OnAllyDeath();
+                    }
+                }
+                Die();
+                Logger.Log("member update: end (dead)", 5);
+                return;
+            }
+
+            Logger.Log("member update: end", 5);
+        }
+
         /// <summary>
-        /// this delegate is called whenever a member dies (no longer alive, too distant members shouldn't call this)
+        /// decrements gangManager's living members count, also tells the war manager about it,
+        /// clears this script's references, removes the ped's blip and marks the ped as no longer needed
         /// </summary>
-        public static OnMemberDied onMemberDied;
+        public void Die(bool alsoDelete = false)
+        {
 
-		public override void Update() {
-			Logger.Log("member update: start", 5);
-			if ((watchedPed.IsInAir) || MindControl.CurrentPlayerCharacter == watchedPed) {
-				Logger.Log("member update: end (isPlayer or etc)", 5);
-				return;
-			}
-			if (curStatus != MemberStatus.inVehicle) {
-				watchedPed.BlockPermanentEvents = false;
-				if (watchedPed.Position.DistanceTo2D(MindControl.CurrentPlayerCharacter.Position) >
-			   ModOptions.instance.maxDistanceMemberSpawnFromPlayer * 1.5f) {
-					//we're too far to be important
-					Die();
-					Logger.Log("member update: end (too far, despawn)", 5);
-					return;
-				}
+            if (watchedPed != null)
+            {
+                //TODO add "despawn" delegate and link war managers to it
+                if (GangWarManager.instance.isOccurring)
+                {
+                    if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroupIndex)
+                    {
+                        //enemy down
+                        GangWarManager.instance.DecrementSpawnedsNumber(false);
+                    }
+                    else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex)
+                    {
+                        //ally down
+                        GangWarManager.instance.DecrementSpawnedsNumber(true);
+                    }
+                }
+                if (watchedPed.CurrentBlip != null)
+                {
+                    watchedPed.CurrentBlip.Remove();
+                }
 
-				if (RandoMath.RandomBool() && !watchedPed.IsInGroup && !watchedPed.IsInCombat) {
-					if (GangWarManager.instance.isOccurring && GangWarManager.instance.playerNearWarzone) {
-						//instead of idling while in a war, members should head for one of the spawn points
-						if (myGang == GangManager.PlayerGang) {
-							if (GangWarManager.instance.enemySpawnPoints != null) {
-								Vector3 ourDestination = RandoMath.GetRandomElementFromArray(GangWarManager.instance.enemySpawnPoints);
-								if (ourDestination != Vector3.Zero) {
-									watchedPed.Task.RunTo(ourDestination);
-								}
+                if (alsoDelete)
+                {
+                    watchedPed.Delete();
+                }
+                else
+                {
+                    watchedPed.MarkAsNoLongerNeeded();
 
-							}
-						}
-						else {
-							if (GangWarManager.instance.alliedSpawnPoints != null) {
-								Vector3 ourDestination = RandoMath.GetRandomElementFromArray(GangWarManager.instance.alliedSpawnPoints);
-								if (ourDestination != Vector3.Zero) {
-									watchedPed.Task.RunTo(ourDestination);
-								}
-							}
-						}
+                }
 
-						curStatus = MemberStatus.onFootThinking;
-						ticksSinceLastIdleChange = 0;
-					}
-					else {
-						if (curStatus != MemberStatus.onFootThinking || ticksSinceLastIdleChange > TICKS_BETWEEN_IDLE_CHANGE) {
-							curStatus = MemberStatus.onFootThinking;
-							if (RandoMath.RandomBool()) {
-								watchedPed.Task.WanderAround();
-							}
-							else {
-								DoAnIdleAnim();
-							}
-							ticksSinceLastIdleChange = 0 - RandoMath.CachedRandom.Next(10);
-						}
-						else {
-							ticksSinceLastIdleChange++;
-						}
-					}
-				}
+            }
 
+            this.myGang = null;
+            this.watchedPed = null;
+            curStatus = MemberStatus.none;
+            SpawnManager.instance.livingMembersCount--;
 
+        }
 
+        /// <summary>
+        /// does an ambient animation, like smoking
+        /// </summary>
+        public void DoAnIdleAnim()
+        {
+            Vector3 scenarioPos = World.GetNextPositionOnSidewalk(watchedPed.Position);
+            Function.Call(Hash.TASK_START_SCENARIO_AT_POSITION, watchedPed, RandoMath.GetRandomElementFromArray(idleAnims),
+                scenarioPos.X, scenarioPos.Y, scenarioPos.Z, RandoMath.RandomHeading(), 0, 0, 0);
+        }
 
-			}
-			else {
-				if (watchedPed.IsInVehicle()) {
-					Vehicle curVehicle = watchedPed.CurrentVehicle;
-					if (!curVehicle.IsPersistent) //if our vehicle has reached its destination (= no longer persistent, no longer with driver AI attached)...
-					{
-						if (watchedPed.Position.DistanceTo2D(MindControl.CurrentPlayerCharacter.Position) >
-			   ModOptions.instance.maxDistanceCarSpawnFromPlayer * 3) {
-							//we're too far to be important
-							Die();
-							Logger.Log("member update: end (in vehicle: too far, despawn)", 5);
-							return;
-						}
+        public void ResetUpdateInterval()
+        {
+            ticksBetweenUpdates = ModOptions.Instance.TicksBetweenGangMemberAIUpdates + RandoMath.CachedRandom.Next(100);
+        }
 
-						if (curVehicle.IsSeatFree(VehicleSeat.Driver)) {
-							//possibly leave the vehicle if the driver has left already
-							if (RandoMath.RandomBool()) {
-								watchedPed.Task.LeaveVehicle();
-							}
-						}
-					}
+        public SpawnedGangMember(Ped watchedPed, Gang myGang, bool hasDriveByGun)
+        {
+            AttachData(watchedPed, myGang, hasDriveByGun);
+            ResetUpdateInterval();
+        }
 
-				}
-				else {
-					curStatus = MemberStatus.none;
-				}
+        /// <summary>
+        /// sets our watched ped, gang and other info that can be useful
+        /// </summary>
+        /// <param name="targetPed"></param>
+        public void AttachData(Ped targetPed, Gang ourGang, bool hasDriveByGun)
+        {
+            this.watchedPed = targetPed;
+            this.myGang = ourGang;
+            this.hasDriveByGun = hasDriveByGun;
+        }
 
-			}
+        /// <summary>
+        /// checks if we're not set to defensive (if a war is occurring and we're one of the involved gangs, that doesn't matter)
+        /// </summary>
+        /// <returns></returns>
+        public bool CanFight()
+        {
+            return (ModOptions.Instance.GangMemberAggressiveness !=
+                    ModOptions.GangMemberAggressivenessMode.defensive ||
+                    (GangWarManager.instance.isOccurring && (myGang == GangWarManager.instance.enemyGang || myGang == GangManager.PlayerGang)));
+        }
 
-			if (!watchedPed.IsAlive) {
-				if (GangWarManager.instance.isOccurring) {
-					if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroupIndex) {
-						//enemy down
-						GangWarManager.instance.OnEnemyDeath();
-					}
-					else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex) {
-						//ally down
-						GangWarManager.instance.OnAllyDeath();
-					}
-				}
-				Die();
-				Logger.Log("member update: end (dead)", 5);
-				return;
-			}
-
-			Logger.Log("member update: end", 5);
-		}
-
-		/// <summary>
-		/// decrements gangManager's living members count, also tells the war manager about it,
-		/// clears this script's references, removes the ped's blip and marks the ped as no longer needed
-		/// </summary>
-		public void Die(bool alsoDelete = false) {
-
-			if (watchedPed != null) {
-
-				if (GangWarManager.instance.isOccurring) {
-					if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroupIndex) {
-						//enemy down
-						GangWarManager.instance.DecrementSpawnedsNumber(false);
-					}
-					else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex) {
-						//ally down
-						GangWarManager.instance.DecrementSpawnedsNumber(true);
-					}
-				}
-				if (watchedPed.CurrentBlip != null) {
-					watchedPed.CurrentBlip.Remove();
-				}
-
-				if (alsoDelete) {
-					watchedPed.Delete();
-				}
-				else {
-					watchedPed.MarkAsNoLongerNeeded();
-
-				}
-
-			}
-
-			this.myGang = null;
-			this.watchedPed = null;
-			curStatus = MemberStatus.none;
-			SpawnManager.instance.livingMembersCount--;
-
-		}
-
-		/// <summary>
-		/// does an ambient animation, like smoking
-		/// </summary>
-		public void DoAnIdleAnim() {
-			Vector3 scenarioPos = World.GetNextPositionOnSidewalk(watchedPed.Position);
-			Function.Call(Hash.TASK_START_SCENARIO_AT_POSITION, watchedPed, RandoMath.GetRandomElementFromArray(idleAnims),
-				scenarioPos.X, scenarioPos.Y, scenarioPos.Z, RandoMath.RandomHeading(), 0, 0, 0);
-		}
-
-		public void ResetUpdateInterval() {
-			ticksBetweenUpdates = ModOptions.instance.ticksBetweenGangMemberAIUpdates + RandoMath.CachedRandom.Next(100);
-		}
-
-		public SpawnedGangMember(Ped watchedPed, Gang myGang, bool hasDriveByGun) {
-			AttachData(watchedPed, myGang, hasDriveByGun);
-			ResetUpdateInterval();
-		}
-
-		/// <summary>
-		/// sets our watched ped, gang and other info that can be useful
-		/// </summary>
-		/// <param name="targetPed"></param>
-		public void AttachData(Ped targetPed, Gang ourGang, bool hasDriveByGun) {
-			this.watchedPed = targetPed;
-			this.myGang = ourGang;
-			this.hasDriveByGun = hasDriveByGun;
-		}
-
-		/// <summary>
-		/// checks if we're not set to defensive (if a war is occurring and we're one of the involved gangs, that doesn't matter)
-		/// </summary>
-		/// <returns></returns>
-		public bool CanFight() {
-			return (ModOptions.instance.gangMemberAggressiveness !=
-					ModOptions.GangMemberAggressivenessMode.defensive ||
-					(GangWarManager.instance.isOccurring && (myGang == GangWarManager.instance.enemyGang || myGang == GangManager.PlayerGang)));
-		}
-
-	}
+    }
 }

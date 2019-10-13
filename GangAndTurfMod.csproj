@@ -91,9 +91,12 @@
     <Compile Include="src\AmbientGangMemberSpawner.cs" />
     <Compile Include="src\GangData.cs" />
     <Compile Include="src\MindControl.cs" />
+    <Compile Include="src\persistence\saveable_objs\BuyableWeapon.cs" />
+    <Compile Include="src\persistence\saveable_objs\GangColorTranslation.cs" />
+    <Compile Include="src\persistence\saveable_objs\potentials\PotentialMemberPool.cs" />
     <Compile Include="src\SpawnManager.cs" />
     <Compile Include="src\persistence\AutoSaver.cs" />
-    <Compile Include="src\persistence\saveable_objs\FreemodePotentialGangMember.cs" />
+    <Compile Include="src\persistence\saveable_objs\potentials\FreemodePotentialGangMember.cs" />
     <Compile Include="src\persistence\saveable_objs\Gang.cs" />
     <Compile Include="src\GangAI.cs" />
     <Compile Include="src\utils\GangCalculations.cs" />
@@ -106,8 +109,8 @@
     <Compile Include="src\ModCore.cs" />
     <Compile Include="src\persistence\saveable_objs\ModOptions.cs" />
     <Compile Include="src\persistence\PersistenceHandler.cs" />
-    <Compile Include="src\persistence\saveable_objs\PotentialGangMember.cs" />
-    <Compile Include="src\persistence\saveable_objs\PotentialGangVehicle.cs" />
+    <Compile Include="src\persistence\saveable_objs\potentials\PotentialGangMember.cs" />
+    <Compile Include="src\persistence\saveable_objs\potentials\PotentialGangVehicle.cs" />
     <Compile Include="src\utils\RandoMath.cs" />
     <Compile Include="src\SpawnedDrivingGangMember.cs" />
     <Compile Include="src\SpawnedGangMember.cs" />
