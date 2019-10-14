@@ -119,7 +119,7 @@ namespace GTA.GangAndTurfMod
                 if (ModOptions.Instance.GetBuyableWeaponByHash(chosenWeapon) == null)
                 {
                     WatchedGang.preferredWeaponHashes.Remove(chosenWeapon);
-                    GangManager.SaveGangData(false);
+                    GangManager.
                     return;
                 }
 
@@ -127,7 +127,7 @@ namespace GTA.GangAndTurfMod
                 {
                     WatchedGang.moneyAvailable -= ModOptions.Instance.GetBuyableWeaponByHash(chosenWeapon).Price;
                     WatchedGang.gangWeaponHashes.Add(chosenWeapon);
-                    GangManager.SaveGangData(false);
+                    GangManager.SaveData(false);
                 }
             }
         }
@@ -148,7 +148,7 @@ namespace GTA.GangAndTurfMod
                             WatchedGang.memberAccuracyLevel = ModOptions.Instance.MaxGangMemberAccuracy;
                         }
 
-                        GangManager.SaveGangData(false);
+                        GangManager.SaveData(false);
                     }
                     break;
                 case 1: //armor!
@@ -163,7 +163,7 @@ namespace GTA.GangAndTurfMod
                             WatchedGang.memberArmor = ModOptions.Instance.MaxGangMemberArmor;
                         }
 
-                        GangManager.SaveGangData(false);
+                        GangManager.SaveData(false);
                     }
                     break;
 
@@ -179,7 +179,7 @@ namespace GTA.GangAndTurfMod
                             WatchedGang.memberHealth = ModOptions.Instance.MaxGangMemberHealth;
                         }
 
-                        GangManager.SaveGangData(false);
+                        GangManager.SaveData(false);
                     }
                     break;
             }
@@ -196,7 +196,7 @@ namespace GTA.GangAndTurfMod
             {
                 WatchedGang.moneyAvailable -= upgradeCost;
                 WatchedGang.baseTurfValue++;
-                GangManager.SaveGangData(false);
+                GangManager.SaveData(false);
                 return;
             }
             //if we have enough money to upgrade a zone,

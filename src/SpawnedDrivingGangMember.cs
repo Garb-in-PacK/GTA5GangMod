@@ -155,7 +155,7 @@ namespace GTA.GangAndTurfMod
                         //if we took too long to get to the player and can't be currently seen by the player, lets just teleport close by
                         //...this should only happen with friendly vehicles, or else the player may be blitzkrieg-ed in a not funny way
                         if (!vehicleIAmDriving.IsOnScreen && SpawningOptions.ForceSpawnCars &&
-                            watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex)
+                            watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroup)
                         {
                             vehicleIAmDriving.Position = World.GetNextPositionOnStreet(MindControl.CurrentPlayerCharacter.Position, true);
                         }
@@ -180,7 +180,7 @@ namespace GTA.GangAndTurfMod
                             //teleport if we're failing to escort due to staying too far
                             //(should only happen with friendly vehicles and if forceSpawnCars is true)
                             if (SpawningOptions.ForceSpawnCars &&
-                                watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex &&
+                                watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroup &&
                                 vehicleIAmDriving.Position.DistanceTo2D(MindControl.CurrentPlayerCharacter.Position) >
                                 SpawningOptions.MaxDistanceCarSpawnFromPlayer * 3 &&
                                 !vehicleIAmDriving.IsOnScreen)

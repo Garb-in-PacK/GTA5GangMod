@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AmbientGangMemberSpawner.cs" />
+    <Compile Include="src\persistence\modOptions\RelationOptions.cs" />
     <Compile Include="src\persistence\saveable_objs\GangData.cs" />
     <Compile Include="src\MindControl.cs" />
     <Compile Include="src\persistence\modOptions\GangNamesOptions.cs" />

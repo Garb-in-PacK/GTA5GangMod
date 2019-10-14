@@ -40,6 +40,8 @@ namespace GTA.GangAndTurfMod
 
         public GangsOptions GangsOptions { get; private set; }
 
+        public RelationOptions RelationOptions { get; private set; }
+
         public ZoneOptions ZoneOptions { get; private set; }
 
         public WarOptions WarOptions { get; private set; }
@@ -79,6 +81,8 @@ namespace GTA.GangAndTurfMod
 
             MemberAIOptions.SetOptionsToDefault();
 
+            RelationOptions.SetOptionsToDefault();
+
             GangAIOptions.SetOptionsToDefault();
 
             BackupOptions.SetOptionsToDefault();
@@ -87,8 +91,6 @@ namespace GTA.GangAndTurfMod
             LoggerLevel = 1;
 
             GangsOptions.SetOptionsToDefault();
-
-            SaveData();
 
             GangManager.ResetGangUpdateIntervals();
         }
@@ -106,6 +108,8 @@ namespace GTA.GangAndTurfMod
                 this.Keys = loadedOptions.Keys;
 
                 this.MemberUpgradeOptions = loadedOptions.MemberUpgradeOptions;
+
+                this.RelationOptions = loadedOptions.RelationOptions;
 
                 this.MemberAIOptions = loadedOptions.MemberAIOptions;
 

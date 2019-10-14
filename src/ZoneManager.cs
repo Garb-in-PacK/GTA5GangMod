@@ -286,7 +286,7 @@ namespace GTA.GangAndTurfMod
                     }
                     break;
                 default:
-                    UI.Notify("Invalid blip display type");
+                    UI.Notification.Show("Invalid blip display type");
                     break;
             }
         }
@@ -367,7 +367,7 @@ namespace GTA.GangAndTurfMod
         /// <returns></returns>
         public TurfZone GetCurrentTurfZone()
         {
-            return GetZoneByName(World.GetZoneName(MindControl.CurrentPlayerCharacter.Position));
+            return GetZoneByName(World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position));
         }
 
         public List<TurfZone> GetZonesControlledByGang(string desiredGangName)

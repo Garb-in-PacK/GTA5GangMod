@@ -158,7 +158,7 @@ namespace GTA.GangAndTurfMod
             {
                 if (livingMembers[i].watchedPed != null)
                 {
-                    if (livingMembers[i].watchedPed.RelationshipGroup == desiredGang.relationGroupIndex)
+                    if (livingMembers[i].watchedPed.RelationshipGroup == desiredGang.relationGroup)
                     {
                         returnedList.Add(livingMembers[i].watchedPed);
                     }
@@ -218,7 +218,7 @@ namespace GTA.GangAndTurfMod
             {
                 if (livingDrivingMembers[i].watchedPed != null)
                 {
-                    if (livingDrivingMembers[i].watchedPed.RelationshipGroup == desiredGang.relationGroupIndex)
+                    if (livingDrivingMembers[i].watchedPed.RelationshipGroup == desiredGang.relationGroup)
                     {
                         returnedList.Add(livingDrivingMembers[i]);
                     }
@@ -277,7 +277,7 @@ namespace GTA.GangAndTurfMod
                 if (livingMembers[i].watchedPed != null)
                 {
                     if (livingMembers[i] != MindControl.CurrentlyControlledMember &&
-                        livingMembers[i].watchedPed.RelationshipGroup != myGang.relationGroupIndex)
+                        livingMembers[i].watchedPed.RelationshipGroup != myGang.relationGroup)
                     {
                         returnedList.Add(livingMembers[i].watchedPed);
                     }
@@ -486,7 +486,7 @@ namespace GTA.GangAndTurfMod
                     }
 
                     //set the relationship group
-                    newPed.RelationshipGroup = ownerGang.relationGroupIndex;
+                    newPed.RelationshipGroup = ownerGang.relationGroup;
 
                     newPed.NeverLeavesGroup = true;
 

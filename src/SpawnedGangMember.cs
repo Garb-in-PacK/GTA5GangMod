@@ -163,12 +163,12 @@ namespace GTA.GangAndTurfMod
                 //TODO use onDied delegate here
                 if (GangWarManager.instance.isOccurring)
                 {
-                    if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroupIndex)
+                    if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroup)
                     {
                         //enemy down
                         GangWarManager.instance.OnEnemyDeath();
                     }
-                    else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex)
+                    else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroup)
                     {
                         //ally down
                         GangWarManager.instance.OnAllyDeath();
@@ -194,12 +194,12 @@ namespace GTA.GangAndTurfMod
                 //TODO add "despawn" delegate and link war managers to it
                 if (GangWarManager.instance.isOccurring)
                 {
-                    if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroupIndex)
+                    if (watchedPed.RelationshipGroup == GangWarManager.instance.enemyGang.relationGroup)
                     {
                         //enemy down
                         GangWarManager.instance.DecrementSpawnedsNumber(false);
                     }
-                    else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroupIndex)
+                    else if (watchedPed.RelationshipGroup == GangManager.PlayerGang.relationGroup)
                     {
                         //ally down
                         GangWarManager.instance.DecrementSpawnedsNumber(true);

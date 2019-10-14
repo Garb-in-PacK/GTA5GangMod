@@ -181,14 +181,14 @@ namespace GTA.GangAndTurfMod
 
                 if (theWarType == WarType.attackingEnemy)
                 {
-                    UI.ShowSubtitle("The " + enemyGang.name + " are coming!");
+                    UI.Screen.ShowSubtitle("The " + enemyGang.name + " are coming!");
 
                     //if we are attacking, set spawns around the player!
                     SetSpawnPoints(MindControl.SafePositionNearPlayer);
                 }
                 else
                 {
-                    UI.Notify(string.Concat("The ", enemyGang.name, " are attacking ", warZone.zoneName, "! They are ",
+                    UI.Notification.Show(string.Concat("The ", enemyGang.name, " are attacking ", warZone.zoneName, "! They are ",
                         GangCalculations.CalculateAttackerReinforcements(enemyGang, attackStrength).ToString(),
                         " against our ",
                         GangCalculations.CalculateDefenderReinforcements(GangManager.PlayerGang, warZone).ToString()));
@@ -290,7 +290,7 @@ namespace GTA.GangAndTurfMod
                 }
             }
 
-            UI.Notify(battleReport);
+            UI.Notification.Show(battleReport);
 
             return itsAVictory;
         }
@@ -304,17 +304,17 @@ namespace GTA.GangAndTurfMod
                 MindControl.AddOrSubtractMoneyToProtagonist
                     (battleProfit);
 
-                UI.Notify("Victory rewards: $" + battleProfit.ToString());
+                UI.Notification.Show("Victory rewards: $" + battleProfit.ToString());
 
                 if (weWereAttacking)
                 {
                     GangManager.PlayerGang.TakeZone(warZone);
 
-                    UI.ShowSubtitle(warZone.zoneName + " is now ours!");
+                    UI.Screen.ShowSubtitle(warZone.zoneName + " is now ours!");
                 }
                 else
                 {
-                    UI.ShowSubtitle(warZone.zoneName + " remains ours!");
+                    UI.Screen.ShowSubtitle(warZone.zoneName + " remains ours!");
 
                 }
 
@@ -327,12 +327,12 @@ namespace GTA.GangAndTurfMod
                     ModOptions.Instance.ExtraProfitForAIGangsFactor);
                 if (curWarType == WarType.attackingEnemy)
                 {
-                    UI.ShowSubtitle("We've lost this battle. They keep the turf.");
+                    UI.Screen.ShowSubtitle("We've lost this battle. They keep the turf.");
                 }
                 else
                 {
                     enemyGang.TakeZone(warZone);
-                    UI.ShowSubtitle(warZone.zoneName + " has been taken by the " + enemyGang.name + "!");
+                    UI.Screen.ShowSubtitle(warZone.zoneName + " has been taken by the " + enemyGang.name + "!");
                 }
             }
 
@@ -670,7 +670,7 @@ namespace GTA.GangAndTurfMod
                 if (RandoMath.RandomBool())
                 {
                     enemyGang.gangWeaponHashes.Add(RandoMath.GetRandomElementFromList(ModOptions.Instance.DriveByWeapons));
-                    GangManager.SaveGangData(false);
+                    GangManager.SaveData(false);
                 }
             }
         }
@@ -864,7 +864,7 @@ namespace GTA.GangAndTurfMod
         /// <returns></returns>
         public bool IsPlayerCloseToWar()
         {
-            return (World.GetZoneName(MindControl.CurrentPlayerCharacter.Position) == warZone.zoneName ||
+            return (World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position) == warZone.zoneName ||
                 warZone.zoneBlipPosition.DistanceTo2D(MindControl.CurrentPlayerCharacter.Position) <
                 ModOptions.Instance.maxDistToWarBlipBeforePlayerLeavesWar);
         }
@@ -874,10 +874,10 @@ namespace GTA.GangAndTurfMod
         /// </summary>
         public void SetHateRelationsBetweenGangs()
         {
-            World.SetRelationshipBetweenGroups(Relationship.Hate, enemyGang.relationGroupIndex, GangManager.PlayerGang.relationGroupIndex);
-            World.SetRelationshipBetweenGroups(Relationship.Hate, GangManager.PlayerGang.relationGroupIndex, enemyGang.relationGroupIndex);
-            World.SetRelationshipBetweenGroups(Relationship.Hate, enemyGang.relationGroupIndex, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, enemyGang.relationGroupIndex);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, enemyGang.relationGroup, GangManager.PlayerGang.relationGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, GangManager.PlayerGang.relationGroup, enemyGang.relationGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, enemyGang.relationGroup, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, enemyGang.relationGroup);
         }
 
         private void OnTick(object sender, EventArgs e)

@@ -94,7 +94,7 @@ namespace GTA.GangAndTurfMod
         {
             if (Function.Call<bool>(Hash.IS_PLAYER_BEING_ARRESTED, Game.Player, true))
             {
-                UI.ShowSubtitle("Your member has been arrested!");
+                UI.Screen.ShowSubtitle("Your member has been arrested!");
                 RestorePlayerBody();
                 return;
             }
@@ -204,7 +204,7 @@ namespace GTA.GangAndTurfMod
         private static void DiscardDeadBody(Ped theBody)
         {
             hasDiedWithChangedBody = false;
-            theBody.RelationshipGroup = GangManager.PlayerGang.relationGroupIndex;
+            theBody.RelationshipGroup = GangManager.PlayerGang.relationGroup;
             theBody.IsInvincible = false;
             theBody.Health = 0;
             theBody.Kill();
@@ -275,7 +275,7 @@ namespace GTA.GangAndTurfMod
             else
             {
                 oldPed.Health = oldPed.Armor + 100;
-                oldPed.RelationshipGroup = GangManager.PlayerGang.relationGroupIndex;
+                oldPed.RelationshipGroup = GangManager.PlayerGang.relationGroup;
                 oldPed.Task.ClearAllImmediately();
             }
 

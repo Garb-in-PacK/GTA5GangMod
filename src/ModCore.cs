@@ -201,7 +201,7 @@ namespace GTA.GangAndTurfMod
                                 playerGangDrivers[i].deliveringCar = true;
                                 playerGangDrivers[i].destination = Math.Vector3.WorldEast; //just something that isn't zero will do to wake the driver up
                                 playerGangDrivers[i].Update();
-                                UI.Notify("Car told to back you up!");
+                                UI.Notification.Show("Car told to back you up!");
                                 return;
                             }
                         }
@@ -218,7 +218,7 @@ namespace GTA.GangAndTurfMod
                                 if (playerGangMembers[i].IsInGroup)
                                 {
                                     Function.Call(Hash.REMOVE_PED_FROM_GROUP, playerGangMembers[i]);
-                                    UI.Notify("A member has left your group");
+                                    UI.Notification.Show("A member has left your group");
                                 }
                                 else
                                 {
@@ -227,7 +227,7 @@ namespace GTA.GangAndTurfMod
                                     Function.Call(Hash.SET_PED_AS_GROUP_MEMBER, playerGangMembers[i], playergrp);
                                     if (playerGangMembers[i].IsInGroup)
                                     {
-                                        UI.Notify("A member has joined your group");
+                                        UI.Notification.Show("A member has joined your group");
                                     }
                                     else
                                     {
@@ -251,7 +251,7 @@ namespace GTA.GangAndTurfMod
                             if (playerGangMembers[i].IsInGroup)
                             {
                                 Function.Call(Hash.REMOVE_PED_FROM_GROUP, playerGangMembers[i]);
-                                UI.Notify("A member has left your group");
+                                UI.Notification.Show("A member has left your group");
                             }
                             else
                             {
@@ -260,7 +260,7 @@ namespace GTA.GangAndTurfMod
                                 Function.Call(Hash.SET_PED_AS_GROUP_MEMBER, playerGangMembers[i], playergrp);
                                 if (playerGangMembers[i].IsInGroup)
                                 {
-                                    UI.Notify("A member has joined your group");
+                                    UI.Notification.Show("A member has joined your group");
                                 }
                             }
                             break;
@@ -272,7 +272,7 @@ namespace GTA.GangAndTurfMod
 
         private void OnAbort(object sender, EventArgs e)
         {
-            UI.Notify("Gang and Turf mod: removing blips. If you didn't press Insert, please check your log and report any errors.");
+            UI.Notification.Show("Gang and Turf mod: removing blips. If you didn't press Insert, please check your log and report any errors.");
             zoneManagerScript.ChangeBlipDisplay(ZoneManager.ZoneBlipDisplay.none);
             if (MindControl.HasChangedBody)
             {

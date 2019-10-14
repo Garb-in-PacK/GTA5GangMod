@@ -19,7 +19,7 @@ namespace GTA.GangAndTurfMod
 
         //the gang's relationshipgroup
         [XmlIgnore]
-        public int relationGroupIndex;
+        public RelationshipGroup relationGroup;
 
         public int memberAccuracyLevel = 1;
         public int memberHealth = 10;
@@ -97,7 +97,7 @@ namespace GTA.GangAndTurfMod
                 preferredWeaponHashes.Add(RandoMath.GetRandomElementFromList(ModOptions.Instance.BuyableWeapons).WepHash);
             }
 
-            GangManager.SaveGangData(false);
+            GangManager.SaveData(false);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace GTA.GangAndTurfMod
             {
                 blipColor = RandoMath.GetRandomElementFromArray(ourColor.BlipColors);
                 vehicleColor = RandoMath.GetRandomElementFromList(ourColor.VehicleColors);
-                GangManager.SaveGangData(false);
+                GangManager.SaveData(false);
             }
         }
 
@@ -127,7 +127,7 @@ namespace GTA.GangAndTurfMod
             memberAccuracyLevel = RandoMath.TrimValue(memberAccuracyLevel, 0, ModOptions.Instance.MaxGangMemberAccuracy);
             baseTurfValue = RandoMath.TrimValue(baseTurfValue, 0, ModOptions.Instance.MaxTurfValue);
 
-            GangManager.SaveGangData(false);
+            GangManager.SaveData(false);
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace GTA.GangAndTurfMod
                 SetPreferredWeapons();
             }
 
-            GangManager.SaveGangData(false);
+            GangManager.SaveData(false);
         }
 
         public bool AddMemberVariation(PotentialGangMember newMember)
@@ -171,7 +171,7 @@ namespace GTA.GangAndTurfMod
             }
 
             memberVariations.Add(newMember);
-            GangManager.SaveGangData(isPlayerOwned);
+            GangManager.SaveData(isPlayerOwned);
             return true;
         }
 
@@ -195,7 +195,7 @@ namespace GTA.GangAndTurfMod
                             GangManager.GetMembersForGang(this);
                         }
 
-                        GangManager.SaveGangData();
+                        GangManager.SaveData();
                         return true;
                     }
                 }
@@ -218,7 +218,7 @@ namespace GTA.GangAndTurfMod
                             GangManager.GetMembersForGang(this);
                         }
 
-                        GangManager.SaveGangData();
+                        GangManager.SaveData();
                         return true;
                     }
                 }
@@ -243,7 +243,7 @@ namespace GTA.GangAndTurfMod
             }
 
             carVariations.Add(newVehicleType);
-            GangManager.SaveGangData();
+            GangManager.SaveData();
             return true;
         }
 
@@ -265,7 +265,7 @@ namespace GTA.GangAndTurfMod
                         carVariations.Add(PotentialGangVehicle.GetCarFromPool());
                     }
 
-                    GangManager.SaveGangData();
+                    GangManager.SaveData();
                     return true;
                 }
             }
@@ -297,7 +297,7 @@ namespace GTA.GangAndTurfMod
                     notificationMsg = string.Concat(notificationMsg, " from the ", takenZone.ownerGangName);
                 }
                 notificationMsg = string.Concat(notificationMsg, "!");
-                UI.Notify(notificationMsg);
+                UI.Notification.Show(notificationMsg);
             }
             takenZone.value = baseTurfValue;
             takenZone.ownerGangName = name;

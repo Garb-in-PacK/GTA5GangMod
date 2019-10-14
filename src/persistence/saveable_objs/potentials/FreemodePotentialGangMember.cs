@@ -177,7 +177,7 @@ namespace GTA.GangAndTurfMod
             }
             else
             {
-                UI.Notify(string.Concat("attempted face blending for invalid ped type: ", targetPed.Model));
+                UI.Notification.Show(string.Concat("attempted face blending for invalid ped type: ", targetPed.Model));
             }
 
             Function.Call(Hash.SET_PED_HEAD_BLEND_DATA, targetPed, GetAFaceIndex(pedGender), GetAFaceIndex(pedGender), 0, GetAFaceIndex(0),

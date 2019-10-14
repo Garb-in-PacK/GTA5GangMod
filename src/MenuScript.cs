@@ -138,15 +138,15 @@ namespace GTA.GangAndTurfMod
             memberMenu.RefreshIndex();
             warAttackStrengthMenu.RefreshIndex();
 
-            AggOption.Index = (int)ModOptions.MemberAIOptions.GangMemberAggressiveness;
+            AggOption.Index = (int)ModOptions.RelationOptions.GangMemberAggressiveness;
 
             //add mouse click as another "select" button
-            menuPool.SetKey(UIMenu.MenuControls.Select, Control.PhoneSelect);
-            InstructionalButton clickButton = new InstructionalButton(Control.PhoneSelect, "Select");
-            zonesMenu.AddInstructionalButton(clickButton);
-            gangMenu.AddInstructionalButton(clickButton);
-            memberMenu.AddInstructionalButton(clickButton);
-            warAttackStrengthMenu.AddInstructionalButton(clickButton);
+            //menuPool.SetKey(UIMenu.MenuControls.Select, Control.PhoneSelect);
+            //InstructionalButton clickButton = new InstructionalButton(Control.PhoneSelect, "Select");
+            //zonesMenu.AddInstructionalButton(clickButton);
+            //gangMenu.AddInstructionalButton(clickButton);
+            //memberMenu.AddInstructionalButton(clickButton);
+            //warAttackStrengthMenu.AddInstructionalButton(clickButton);
 
             ticksSinceLastCarBkp = ModOptions.BackupOptions.TicksCooldownBackupCar;
             ticksSinceLastParaBkp = ModOptions.BackupOptions.TicksCooldownParachutingMember;
@@ -172,12 +172,12 @@ namespace GTA.GangAndTurfMod
                     closestPed = World.GetClosestPed(MindControl.CurrentPlayerCharacter.Position + MindControl.CurrentPlayerCharacter.ForwardVector * 6.0f, 5.5f);
                     if (closestPed != null)
                     {
-                        UI.ShowSubtitle("ped selected!");
+                        UI.Screen.ShowSubtitle("ped selected!");
                         World.AddExplosion(closestPed.Position, ExplosionType.Steam, 1.0f, 0.1f);
                     }
                     else
                     {
-                        UI.ShowSubtitle("Couldn't find a ped in front of you! You have selected yourself.");
+                        UI.Screen.ShowSubtitle("Couldn't find a ped in front of you! You have selected yourself.");
                         closestPed = MindControl.CurrentPlayerCharacter;
                         World.AddExplosion(closestPed.Position, ExplosionType.Extinguisher, 1.0f, 0.1f);
                     }
@@ -186,7 +186,7 @@ namespace GTA.GangAndTurfMod
                 }
                 else
                 {
-                    UI.ShowSubtitle("vehicle selected!");
+                    UI.Screen.ShowSubtitle("vehicle selected!");
                     carMenu.Visible = !carMenu.Visible;
                 }
                 RefreshNewEnemyMenuContent();
@@ -219,13 +219,13 @@ namespace GTA.GangAndTurfMod
                     {
                         ZoneManager.instance.GiveGangZonesToAnother(GangManager.PlayerGang.name, typedText);
                         GangManager.PlayerGang.name = typedText;
-                        GangManager.SaveGangData();
+                        GangManager.SaveData();
 
-                        UI.ShowSubtitle("Your gang is now known as the " + typedText);
+                        UI.Screen.ShowSubtitle("Your gang is now known as the " + typedText);
                     }
                     else
                     {
-                        UI.ShowSubtitle("That name is not allowed, sorry! (It may be in use already)");
+                        UI.Screen.ShowSubtitle("That name is not allowed, sorry! (It may be in use already)");
                     }
 
                     CurInputType = DesiredInputType.none;
@@ -267,7 +267,7 @@ namespace GTA.GangAndTurfMod
 
         private void UpdateZoneUpgradeBtn()
         {
-            string curZoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+            string curZoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
             TurfZone curZone = ZoneManager.instance.GetZoneByName(curZoneName);
             if (curZone == null)
             {
@@ -321,7 +321,7 @@ namespace GTA.GangAndTurfMod
             {
                 if (item == saveZoneBtn)
                 {
-                    string curZoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+                    string curZoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
                     TurfZone curZone = ZoneManager.instance.GetZoneByName(curZoneName);
                     if (curZone == null)
                     {
@@ -332,7 +332,7 @@ namespace GTA.GangAndTurfMod
                     //update the zone's blip position even if it already existed
                     curZone.zoneBlipPosition = MindControl.CurrentPlayerCharacter.Position;
                     ZoneManager.instance.UpdateZoneData(curZone);
-                    UI.ShowSubtitle("Zone Data Updated!");
+                    UI.Screen.ShowSubtitle("Zone Data Updated!");
                 }
             };
 
@@ -348,11 +348,11 @@ namespace GTA.GangAndTurfMod
             {
                 if (item == takeZoneButton)
                 {
-                    string curZoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+                    string curZoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
                     TurfZone curZone = ZoneManager.instance.GetZoneByName(curZoneName);
                     if (curZone == null)
                     {
-                        UI.ShowSubtitle("this zone isn't marked as takeable.");
+                        UI.Screen.ShowSubtitle("this zone isn't marked as takeable.");
                     }
                     else
                     {
@@ -361,18 +361,18 @@ namespace GTA.GangAndTurfMod
                             if (MindControl.AddOrSubtractMoneyToProtagonist(-ModOptions.ZoneOptions.BaseCostToTakeTurf))
                             {
                                 GangManager.PlayerGang.TakeZone(curZone);
-                                UI.ShowSubtitle("This zone is " + GangManager.PlayerGang.name + " turf now!");
+                                UI.Screen.ShowSubtitle("This zone is " + GangManager.PlayerGang.name + " turf now!");
                             }
                             else
                             {
-                                UI.ShowSubtitle("You don't have the resources to take over a neutral zone.");
+                                UI.Screen.ShowSubtitle("You don't have the resources to take over a neutral zone.");
                             }
                         }
                         else
                         {
                             if (curZone.ownerGangName == GangManager.PlayerGang.name)
                             {
-                                UI.ShowSubtitle("Your gang already owns this zone.");
+                                UI.Screen.ShowSubtitle("Your gang already owns this zone.");
                             }
                             else
                             {
@@ -433,7 +433,7 @@ namespace GTA.GangAndTurfMod
 
             warAttackStrengthMenu.OnItemSelect += (sender, item, index) =>
             {
-                string curZoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+                string curZoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
                 TurfZone curZone = ZoneManager.instance.GetZoneByName(curZoneName);
                 if (item == warLightAtkBtn)
                 {
@@ -462,7 +462,7 @@ namespace GTA.GangAndTurfMod
         {
             if (targetZone.ownerGangName == GangManager.PlayerGang.name)
             {
-                UI.ShowSubtitle("You can't start a war against your own gang! (You probably have changed zones after opening this menu)");
+                UI.Screen.ShowSubtitle("You can't start a war against your own gang! (You probably have changed zones after opening this menu)");
                 return false;
             }
 
@@ -471,7 +471,7 @@ namespace GTA.GangAndTurfMod
             {
                 if (!GangWarManager.instance.StartWar(GangManager.GetGangByName(targetZone.ownerGangName), targetZone, GangWarManager.WarType.attackingEnemy, atkStrength))
                 {
-                    UI.ShowSubtitle("A war is already in progress.");
+                    UI.Screen.ShowSubtitle("A war is already in progress.");
                     return false;
                 }
                 else
@@ -482,7 +482,7 @@ namespace GTA.GangAndTurfMod
             }
             else
             {
-                UI.ShowSubtitle("You don't have the resources to start a battle of this size.");
+                UI.Screen.ShowSubtitle("You don't have the resources to start a battle of this size.");
                 return false;
             }
         }
@@ -496,11 +496,11 @@ namespace GTA.GangAndTurfMod
             {
                 if (item == upgradeZoneValueBtn)
                 {
-                    string curZoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+                    string curZoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
                     TurfZone curZone = ZoneManager.instance.GetZoneByName(curZoneName);
                     if (curZone == null)
                     {
-                        UI.ShowSubtitle("this zone isn't marked as takeable.");
+                        UI.Screen.ShowSubtitle("this zone isn't marked as takeable.");
                     }
                     else
                     {
@@ -510,13 +510,13 @@ namespace GTA.GangAndTurfMod
                             {
                                 if (curZone.value >= ModOptions.ZoneOptions.MaxTurfLevel)
                                 {
-                                    UI.ShowSubtitle("This zone's level is already maxed!");
+                                    UI.Screen.ShowSubtitle("This zone's level is already maxed!");
                                 }
                                 else
                                 {
                                     curZone.value++;
                                     ZoneManager.instance.IsDirty = true;
-                                    UI.ShowSubtitle("Zone level increased!");
+                                    UI.Screen.ShowSubtitle("Zone level increased!");
                                     MindControl.AddOrSubtractMoneyToProtagonist(-curZoneValueUpgradeCost);
                                     UpdateZoneUpgradeBtn();
 
@@ -524,12 +524,12 @@ namespace GTA.GangAndTurfMod
                             }
                             else
                             {
-                                UI.ShowSubtitle("You don't have the resources to upgrade this zone.");
+                                UI.Screen.ShowSubtitle("You don't have the resources to upgrade this zone.");
                             }
                         }
                         else
                         {
-                            UI.ShowSubtitle("You can only upgrade zones owned by your gang!");
+                            UI.Screen.ShowSubtitle("You can only upgrade zones owned by your gang!");
                         }
 
                     }
@@ -545,11 +545,11 @@ namespace GTA.GangAndTurfMod
             {
                 if (item == newButton)
                 {
-                    string curZoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+                    string curZoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
                     TurfZone curZone = ZoneManager.instance.GetZoneByName(curZoneName);
                     if (curZone == null)
                     {
-                        UI.ShowSubtitle("This zone hasn't been marked as takeable.");
+                        UI.Screen.ShowSubtitle("This zone hasn't been marked as takeable.");
                     }
                     else
                     {
@@ -557,7 +557,7 @@ namespace GTA.GangAndTurfMod
                         {
                             if (ModOptions.NotificationsEnabled)
                             {
-                                UI.Notify(string.Concat("The ", curZone.ownerGangName, " have abandoned ",
+                                UI.Notification.Show(string.Concat("The ", curZone.ownerGangName, " have abandoned ",
                                     curZone.zoneName, ". It has become a neutral zone again."));
                             }
                             curZone.ownerGangName = "none";
@@ -570,12 +570,12 @@ namespace GTA.GangAndTurfMod
                                 (ModOptions.ZoneOptions.BaseCostToUpgradeSingleTurfLevel * valueDifference);
                             }
 
-                            UI.ShowSubtitle(curZone.zoneName + " is now neutral again.");
+                            UI.Screen.ShowSubtitle(curZone.zoneName + " is now neutral again.");
                             ZoneManager.instance.UpdateZoneData(curZone);
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your gang does not own this zone.");
+                            UI.Screen.ShowSubtitle("Your gang does not own this zone.");
                         }
                     }
                 }
@@ -640,22 +640,22 @@ namespace GTA.GangAndTurfMod
                     {
                         if (PotentialGangMember.AddMemberAndSavePool(new FreemodePotentialGangMember(closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Potential freemode member added!");
+                            UI.Screen.ShowSubtitle("Potential freemode member added!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("A similar potential member already exists.");
+                            UI.Screen.ShowSubtitle("A similar potential member already exists.");
                         }
                     }
                     else
                     {
                         if (PotentialGangMember.AddMemberAndSavePool(new PotentialGangMember(closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Potential member added!");
+                            UI.Screen.ShowSubtitle("Potential member added!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("A similar potential member already exists.");
+                            UI.Screen.ShowSubtitle("A similar potential member already exists.");
                         }
                     }
 
@@ -676,11 +676,11 @@ namespace GTA.GangAndTurfMod
                         if (GangManager.PlayerGang.AddMemberVariation(new FreemodePotentialGangMember
                        (closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Freemode Member added successfully!");
+                            UI.Screen.ShowSubtitle("Freemode Member added successfully!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your gang already has a similar member.");
+                            UI.Screen.ShowSubtitle("Your gang already has a similar member.");
                         }
                     }
                     else
@@ -688,11 +688,11 @@ namespace GTA.GangAndTurfMod
                         if (GangManager.PlayerGang.AddMemberVariation(new PotentialGangMember
                        (closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Member added successfully!");
+                            UI.Screen.ShowSubtitle("Member added successfully!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your gang already has a similar member.");
+                            UI.Screen.ShowSubtitle("Your gang already has a similar member.");
                         }
                     }
 
@@ -714,11 +714,11 @@ namespace GTA.GangAndTurfMod
                         if (pickedGang.AddMemberVariation(new FreemodePotentialGangMember
                        (closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Freemode Member added successfully!");
+                            UI.Screen.ShowSubtitle("Freemode Member added successfully!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("That gang already has a similar member.");
+                            UI.Screen.ShowSubtitle("That gang already has a similar member.");
                         }
                     }
                     else
@@ -726,11 +726,11 @@ namespace GTA.GangAndTurfMod
                         if (pickedGang.AddMemberVariation(new PotentialGangMember
                        (closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Member added successfully!");
+                            UI.Screen.ShowSubtitle("Member added successfully!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("That gang already has a similar member.");
+                            UI.Screen.ShowSubtitle("That gang already has a similar member.");
                         }
                     }
                 }
@@ -773,7 +773,7 @@ namespace GTA.GangAndTurfMod
                     Gang ownerGang = GangManager.GetGangByRelGroup(closestPed.RelationshipGroup);
                     if (ownerGang == null)
                     {
-                        UI.ShowSubtitle("The ped doesn't seem to be in a gang.", 8000);
+                        UI.Screen.ShowSubtitle("The ped doesn't seem to be in a gang.", 8000);
                         return;
                     }
                     if (closestPed.Model == PedHash.FreemodeFemale01 || closestPed.Model == PedHash.FreemodeMale01)
@@ -781,11 +781,11 @@ namespace GTA.GangAndTurfMod
                         if (ownerGang.RemoveMemberVariation(new FreemodePotentialGangMember
                         (closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Member removed successfully!");
+                            UI.Screen.ShowSubtitle("Member removed successfully!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("The ped doesn't seem to be in a gang.", 8000);
+                            UI.Screen.ShowSubtitle("The ped doesn't seem to be in a gang.", 8000);
                         }
                     }
                     else
@@ -793,11 +793,11 @@ namespace GTA.GangAndTurfMod
                         if (ownerGang.RemoveMemberVariation(new PotentialGangMember
                         (closestPed, (PotentialGangMember.DressStyle)memberStyle, (PotentialGangMember.MemberColor)memberColor)))
                         {
-                            UI.ShowSubtitle("Member removed successfully!");
+                            UI.Screen.ShowSubtitle("Member removed successfully!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("The ped doesn't seem to be in a gang.", 8000);
+                            UI.Screen.ShowSubtitle("The ped doesn't seem to be in a gang.", 8000);
                         }
                     }
                 }
@@ -819,11 +819,11 @@ namespace GTA.GangAndTurfMod
 
                         if (PotentialGangMember.RemoveMemberAndSavePool(memberToRemove))
                         {
-                            UI.ShowSubtitle("Ped type removed from pool! (It might not be the only similar ped in the pool)");
+                            UI.Screen.ShowSubtitle("Ped type removed from pool! (It might not be the only similar ped in the pool)");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Ped type not found in pool.");
+                            UI.Screen.ShowSubtitle("Ped type not found in pool.");
                         }
 
                         for (int i = 0; i < GangManager.GangData.Gangs.Count; i++)
@@ -838,11 +838,11 @@ namespace GTA.GangAndTurfMod
 
                         if (PotentialGangMember.RemoveMemberAndSavePool(memberToRemove))
                         {
-                            UI.ShowSubtitle("Ped type removed from pool! (It might not be the only similar ped in the pool)");
+                            UI.Screen.ShowSubtitle("Ped type removed from pool! (It might not be the only similar ped in the pool)");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Ped type not found in pool.");
+                            UI.Screen.ShowSubtitle("Ped type not found in pool.");
                         }
 
                         for (int i = 0; i < GangManager.GangData.Gangs.Count; i++)
@@ -862,7 +862,7 @@ namespace GTA.GangAndTurfMod
             {
                 if (item == newButton)
                 {
-                    int closestPedRelGroup = closestPed.RelationshipGroup;
+                    RelationshipGroup closestPedRelGroup = closestPed.RelationshipGroup;
                     //check if we can really become allies with this guy
                     if (closestPedRelGroup != Function.Call<int>(Hash.GET_HASH_KEY, "COP"))
                     {
@@ -870,19 +870,18 @@ namespace GTA.GangAndTurfMod
 
                         if (GangManager.GetGangByRelGroup(closestPedRelGroup) != null)
                         {
-                            UI.ShowSubtitle("That ped is a gang member! Gang members cannot be marked as allies");
+                            UI.Screen.ShowSubtitle("That ped is a gang member! Gang members cannot be marked as allies");
                             return;
                         }
 
                         //ok, we can be allies
                         Gang playerGang = GangManager.PlayerGang;
-                        World.SetRelationshipBetweenGroups(Relationship.Respect, playerGang.relationGroupIndex, closestPedRelGroup);
-                        World.SetRelationshipBetweenGroups(Relationship.Respect, closestPedRelGroup, playerGang.relationGroupIndex);
-                        UI.ShowSubtitle("That ped's group is now an allied group!");
+                        playerGang.relationGroup.SetRelationshipBetweenGroups(closestPedRelGroup, Relationship.Respect, true);
+                        UI.Screen.ShowSubtitle("That ped's group is now an allied group!");
                     }
                     else
                     {
-                        UI.ShowSubtitle("That ped is a cop! Cops cannot be marked as allies");
+                        UI.Screen.ShowSubtitle("That ped is a cop! Cops cannot be marked as allies");
                     }
                 }
             };
@@ -901,16 +900,16 @@ namespace GTA.GangAndTurfMod
                     {
                         if (PotentialGangVehicle.AddVehicleAndSavePool(new PotentialGangVehicle(curVehicle.Model.Hash)))
                         {
-                            UI.ShowSubtitle("Vehicle added to pool!");
+                            UI.Screen.ShowSubtitle("Vehicle added to pool!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("That vehicle has already been added to the pool.");
+                            UI.Screen.ShowSubtitle("That vehicle has already been added to the pool.");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You are not inside a vehicle.");
+                        UI.Screen.ShowSubtitle("You are not inside a vehicle.");
                     }
                 }
             };
@@ -929,16 +928,16 @@ namespace GTA.GangAndTurfMod
                     {
                         if (GangManager.PlayerGang.AddGangCar(new PotentialGangVehicle(curVehicle.Model.Hash)))
                         {
-                            UI.ShowSubtitle("Gang vehicle added!");
+                            UI.Screen.ShowSubtitle("Gang vehicle added!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("That vehicle is already registered for your gang.");
+                            UI.Screen.ShowSubtitle("That vehicle is already registered for your gang.");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You are not inside a vehicle.");
+                        UI.Screen.ShowSubtitle("You are not inside a vehicle.");
                     }
                 }
             };
@@ -958,16 +957,16 @@ namespace GTA.GangAndTurfMod
                     {
                         if (pickedGang.AddGangCar(new PotentialGangVehicle(curVehicle.Model.Hash)))
                         {
-                            UI.ShowSubtitle("Gang vehicle added!");
+                            UI.Screen.ShowSubtitle("Gang vehicle added!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("That vehicle is already registered for that gang.");
+                            UI.Screen.ShowSubtitle("That vehicle is already registered for that gang.");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You are not inside a vehicle.");
+                        UI.Screen.ShowSubtitle("You are not inside a vehicle.");
                     }
                 }
             };
@@ -986,16 +985,16 @@ namespace GTA.GangAndTurfMod
                     {
                         if (GangManager.PlayerGang.RemoveGangCar(new PotentialGangVehicle(curVehicle.Model.Hash)))
                         {
-                            UI.ShowSubtitle("Gang vehicle removed!");
+                            UI.Screen.ShowSubtitle("Gang vehicle removed!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("That vehicle is not registered for your gang.");
+                            UI.Screen.ShowSubtitle("That vehicle is not registered for your gang.");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You are not inside a vehicle.");
+                        UI.Screen.ShowSubtitle("You are not inside a vehicle.");
                     }
                 }
             };
@@ -1016,11 +1015,11 @@ namespace GTA.GangAndTurfMod
 
                         if (PotentialGangVehicle.RemoveVehicleAndSavePool(removedVehicle))
                         {
-                            UI.ShowSubtitle("Vehicle type removed from pool!");
+                            UI.Screen.ShowSubtitle("Vehicle type removed from pool!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Vehicle type not found in pool.");
+                            UI.Screen.ShowSubtitle("Vehicle type not found in pool.");
                         }
 
                         for (int i = 0; i < GangManager.GangData.Gangs.Count; i++)
@@ -1030,7 +1029,7 @@ namespace GTA.GangAndTurfMod
                     }
                     else
                     {
-                        UI.ShowSubtitle("You are not inside a vehicle.");
+                        UI.Screen.ShowSubtitle("You are not inside a vehicle.");
                     }
                 }
             };
@@ -1044,7 +1043,7 @@ namespace GTA.GangAndTurfMod
         {
             if (ticksSinceLastCarBkp < ModOptions.BackupOptions.TicksCooldownBackupCar)
             {
-                UI.ShowSubtitle("You must wait before calling for car backup again! (This is configurable)");
+                UI.Screen.ShowSubtitle("You must wait before calling for car backup again! (This is configurable)");
                 return;
             }
             if (MindControl.AddOrSubtractMoneyToProtagonist(-ModOptions.BackupOptions.CostToCallBackupCar, true))
@@ -1066,21 +1065,21 @@ namespace GTA.GangAndTurfMod
                         }
                         ticksSinceLastCarBkp = 0;
                         MindControl.AddOrSubtractMoneyToProtagonist(-ModOptions.BackupOptions.CostToCallBackupCar);
-                        UI.ShowSubtitle("A vehicle is on its way!", 1000);
+                        UI.Screen.ShowSubtitle("A vehicle is on its way!", 1000);
                     }
                     else
                     {
-                        UI.ShowSubtitle("There are too many gang members around or you haven't registered any member or car.");
+                        UI.Screen.ShowSubtitle("There are too many gang members around or you haven't registered any member or car.");
                     }
                 }
                 else
                 {
-                    UI.ShowSubtitle("You need to have control of at least one territory in order to call for backup.");
+                    UI.Screen.ShowSubtitle("You need to have control of at least one territory in order to call for backup.");
                 }
             }
             else
             {
-                UI.ShowSubtitle("You need $" + ModOptions.BackupOptions.CostToCallBackupCar.ToString() + " to call a vehicle!");
+                UI.Screen.ShowSubtitle("You need $" + ModOptions.BackupOptions.CostToCallBackupCar.ToString() + " to call a vehicle!");
             }
         }
 
@@ -1103,7 +1102,7 @@ namespace GTA.GangAndTurfMod
                 {
                     if (ticksSinceLastParaBkp < ModOptions.BackupOptions.TicksCooldownParachutingMember)
                     {
-                        UI.ShowSubtitle("You must wait before calling for parachuting backup again! (This is configurable)");
+                        UI.Screen.ShowSubtitle("You must wait before calling for parachuting backup again! (This is configurable)");
                         return;
                     }
 
@@ -1123,17 +1122,17 @@ namespace GTA.GangAndTurfMod
                             }
                             else
                             {
-                                UI.ShowSubtitle("There are too many gang members around or you haven't registered any member.");
+                                UI.Screen.ShowSubtitle("There are too many gang members around or you haven't registered any member.");
                             }
                         }
                         else
                         {
-                            UI.ShowSubtitle("You need to have control of at least one territory in order to call for backup.");
+                            UI.Screen.ShowSubtitle("You need to have control of at least one territory in order to call for backup.");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You need $" + ModOptions.BackupOptions.CostToCallParachutingMember.ToString() + " to call a parachuting member!");
+                        UI.Screen.ShowSubtitle("You need $" + ModOptions.BackupOptions.CostToCallParachutingMember.ToString() + " to call a parachuting member!");
                     }
 
                 }
@@ -1186,7 +1185,7 @@ namespace GTA.GangAndTurfMod
                         }
                         else
                         {
-                            UI.ShowSubtitle("You must be in the contested zone or close to the war blip before setting the spawn point!");
+                            UI.Screen.ShowSubtitle("You must be in the contested zone or close to the war blip before setting the spawn point!");
                         }
                     }
                     else
@@ -1197,16 +1196,16 @@ namespace GTA.GangAndTurfMod
                         {
                             if (GangWarManager.instance.ReplaceEnemySpawnPoint())
                             {
-                                UI.ShowSubtitle("Enemy spawn point reset succeeded!");
+                                UI.Screen.ShowSubtitle("Enemy spawn point reset succeeded!");
                             }
                             else
                             {
-                                UI.ShowSubtitle("Enemy spawn point reset failed (try again)!");
+                                UI.Screen.ShowSubtitle("Enemy spawn point reset failed (try again)!");
                             }
                         }
                         else
                         {
-                            UI.ShowSubtitle("You must be in the contested zone or close to the war blip before resetting spawn points!");
+                            UI.Screen.ShowSubtitle("You must be in the contested zone or close to the war blip before resetting spawn points!");
                         }
                     }
                     else
@@ -1221,7 +1220,7 @@ namespace GTA.GangAndTurfMod
                                 }
                                 else
                                 {
-                                    UI.ShowSubtitle("You must be in the contested zone or close to the war blip before setting the spawn point!");
+                                    UI.Screen.ShowSubtitle("You must be in the contested zone or close to the war blip before setting the spawn point!");
                                 }
 
                                 break;
@@ -1234,7 +1233,7 @@ namespace GTA.GangAndTurfMod
                 }
                 else
                 {
-                    UI.ShowSubtitle("There is no war in progress.");
+                    UI.Screen.ShowSubtitle("There is no war in progress.");
                 }
 
             };
@@ -1286,17 +1285,17 @@ namespace GTA.GangAndTurfMod
                                 playerGang.memberHealth = ModOptions.MemberUpgradeOptions.MaxGangMemberHealth;
                             }
                             MindControl.AddOrSubtractMoneyToProtagonist(-healthUpgradeCost);
-                            GangManager.SaveGangData();
-                            UI.ShowSubtitle("Member health upgraded!");
+                            GangManager.SaveData();
+                            UI.Screen.ShowSubtitle("Member health upgraded!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your members' health is at its maximum limit (it can be configured in the ModOptions file)");
+                            UI.Screen.ShowSubtitle("Your members' health is at its maximum limit (it can be configured in the ModOptions file)");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You don't have enough money to buy that upgrade.");
+                        UI.Screen.ShowSubtitle("You don't have enough money to buy that upgrade.");
                     }
                 }
 
@@ -1312,17 +1311,17 @@ namespace GTA.GangAndTurfMod
                                 playerGang.memberArmor = ModOptions.MemberUpgradeOptions.MaxGangMemberArmor;
                             }
                             MindControl.AddOrSubtractMoneyToProtagonist(-armorUpgradeCost);
-                            GangManager.SaveGangData();
-                            UI.ShowSubtitle("Member armor upgraded!");
+                            GangManager.SaveData();
+                            UI.Screen.ShowSubtitle("Member armor upgraded!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your members' armor is at its maximum limit (it can be configured in the ModOptions file)");
+                            UI.Screen.ShowSubtitle("Your members' armor is at its maximum limit (it can be configured in the ModOptions file)");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You don't have enough money to buy that upgrade.");
+                        UI.Screen.ShowSubtitle("You don't have enough money to buy that upgrade.");
                     }
                 }
 
@@ -1338,17 +1337,17 @@ namespace GTA.GangAndTurfMod
                                 playerGang.memberAccuracyLevel = ModOptions.MemberUpgradeOptions.MaxGangMemberAccuracy;
                             }
                             MindControl.AddOrSubtractMoneyToProtagonist(-accuracyUpgradeCost);
-                            GangManager.SaveGangData();
-                            UI.ShowSubtitle("Member accuracy upgraded!");
+                            GangManager.SaveData();
+                            UI.Screen.ShowSubtitle("Member accuracy upgraded!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your members' accuracy is at its maximum limit (it can be configured in the ModOptions file)");
+                            UI.Screen.ShowSubtitle("Your members' accuracy is at its maximum limit (it can be configured in the ModOptions file)");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You don't have enough money to buy that upgrade.");
+                        UI.Screen.ShowSubtitle("You don't have enough money to buy that upgrade.");
                     }
                 }
 
@@ -1364,17 +1363,17 @@ namespace GTA.GangAndTurfMod
                                 playerGang.baseTurfValue = ModOptions.ZoneOptions.MaxTurfLevel;
                             }
                             MindControl.AddOrSubtractMoneyToProtagonist(-gangValueUpgradeCost);
-                            GangManager.SaveGangData();
-                            UI.ShowSubtitle("Gang Base Strength upgraded!");
+                            GangManager.SaveData();
+                            UI.Screen.ShowSubtitle("Gang Base Strength upgraded!");
                         }
                         else
                         {
-                            UI.ShowSubtitle("Your Gang Base Strength is at its maximum limit (it can be configured in the ModOptions file)");
+                            UI.Screen.ShowSubtitle("Your Gang Base Strength is at its maximum limit (it can be configured in the ModOptions file)");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("You don't have enough money to buy that upgrade.");
+                        UI.Screen.ShowSubtitle("You don't have enough money to buy that upgrade.");
                     }
                 }
 
@@ -1408,8 +1407,8 @@ namespace GTA.GangAndTurfMod
                         {
                             playerGang.gangWeaponHashes.Remove(kvp.Key.WepHash);
                             MindControl.AddOrSubtractMoneyToProtagonist(kvp.Key.Price);
-                            GangManager.SaveGangData();
-                            UI.ShowSubtitle("Weapon Removed!");
+                            GangManager.SaveData();
+                            UI.Screen.ShowSubtitle("Weapon Removed!");
                             item.Checked = false;
                         }
                         else
@@ -1417,13 +1416,13 @@ namespace GTA.GangAndTurfMod
                             if (MindControl.AddOrSubtractMoneyToProtagonist(-kvp.Key.Price))
                             {
                                 playerGang.gangWeaponHashes.Add(kvp.Key.WepHash);
-                                GangManager.SaveGangData();
-                                UI.ShowSubtitle("Weapon Bought!");
+                                GangManager.SaveData();
+                                UI.Screen.ShowSubtitle("Weapon Bought!");
                                 item.Checked = true;
                             }
                             else
                             {
-                                UI.ShowSubtitle("You don't have enough money to buy that weapon for your gang.");
+                                UI.Screen.ShowSubtitle("You don't have enough money to buy that weapon for your gang.");
                                 item.Checked = false;
                             }
                         }
@@ -1483,7 +1482,7 @@ namespace GTA.GangAndTurfMod
                 Vehicle playerVehicle = MindControl.CurrentPlayerCharacter.CurrentVehicle;
                 if (playerVehicle != null)
                 {
-                    playerVehicle.PrimaryColor = carColorsArray[index];
+                    playerVehicle.Mods.PrimaryColor = carColorsArray[index];
                 }
             };
 
@@ -1494,8 +1493,8 @@ namespace GTA.GangAndTurfMod
                     if (item == carColorEntries[carColorsArray[i]])
                     {
                         playerGang.vehicleColor = carColorsArray[i];
-                        GangManager.SaveGangData(false);
-                        UI.ShowSubtitle("Gang vehicle color changed!");
+                        GangManager.SaveData(false);
+                        UI.Screen.ShowSubtitle("Gang vehicle color changed!");
                         break;
                     }
                 }
@@ -1548,8 +1547,8 @@ namespace GTA.GangAndTurfMod
                     {
                         GangManager.PlayerGang.blipColor = colorCodesArray[i];
                         playerGangOriginalBlipColor = colorCodesArray[i];
-                        GangManager.SaveGangData(false);
-                        UI.ShowSubtitle("Gang blip color changed!");
+                        GangManager.SaveData(false);
+                        UI.Screen.ShowSubtitle("Gang blip color changed!");
                         break;
                     }
                 }
@@ -1610,7 +1609,7 @@ namespace GTA.GangAndTurfMod
                 if (item == notifyToggle)
                 {
                     ModOptions.NotificationsEnabled = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1625,13 +1624,13 @@ namespace GTA.GangAndTurfMod
                 "Defensive"
             };
 
-            AggOption = new UIMenuListItem("Member Aggressiveness", aggModes, (int)ModOptions.MemberAIOptions.GangMemberAggressiveness, "This controls how aggressive members from all gangs will be. Very aggressive members will shoot at cops and other gangs on sight, aggressive members will shoot only at other gangs on sight and defensive members will only shoot when one of them is attacked or aimed at.");
+            AggOption = new UIMenuListItem("Member Aggressiveness", aggModes, (int)ModOptions.RelationOptions.GangMemberAggressiveness, "This controls how aggressive members from all gangs will be. Very aggressive members will shoot at cops and other gangs on sight, aggressive members will shoot only at other gangs on sight and defensive members will only shoot when one of them is attacked or aimed at.");
             modSettingsSubMenu.AddItem(AggOption);
             modSettingsSubMenu.OnListChange += (sender, item, index) =>
             {
                 if (item == AggOption)
                 {
-                    ModOptions.MemberAIOptions.SetMemberAggressiveness((MemberAIOptions.AggressivenessMode)index);
+                    ModOptions.RelationOptions.SetMemberAggressiveness((RelationOptions.AggressivenessMode)index);
                 }
             };
         }
@@ -1646,7 +1645,7 @@ namespace GTA.GangAndTurfMod
                 if (item == aiToggle)
                 {
                     ModOptions.GangAIOptions.PreventAIExpansion = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1662,7 +1661,7 @@ namespace GTA.GangAndTurfMod
                 if (item == meleeToggle)
                 {
                     ModOptions.SpawningOptions.MembersSpawnWithMeleeOnly = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1678,7 +1677,7 @@ namespace GTA.GangAndTurfMod
                 if (item == warToggle)
                 {
                     ModOptions.WarOptions.WarAgainstPlayerEnabled = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1694,7 +1693,7 @@ namespace GTA.GangAndTurfMod
                 if (item == spawnToggle)
                 {
                     ModOptions.SpawningOptions.AmbientSpawningEnabled = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1710,7 +1709,7 @@ namespace GTA.GangAndTurfMod
                 if (item == blipToggle)
                 {
                     ModOptions.SpawningOptions.ShowGangMemberBlips = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1726,7 +1725,7 @@ namespace GTA.GangAndTurfMod
                 if (item == spawnToggle)
                 {
                     ModOptions.SpawningOptions.ForceSpawnCars = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1742,7 +1741,7 @@ namespace GTA.GangAndTurfMod
                 if (item == pistolToggle)
                 {
                     ModOptions.GangsOptions.GangsStartWithPistols = checked_;
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1760,9 +1759,9 @@ namespace GTA.GangAndTurfMod
                     ModOptions.Keys.JoypadControls = checked_;
                     if (checked_)
                     {
-                        UI.ShowSubtitle("Joypad controls activated. Remember to disable them when not using a joypad, as it is possible to use the commands with mouse/keyboard as well");
+                        UI.Screen.ShowSubtitle("Joypad controls activated. Remember to disable them when not using a joypad, as it is possible to use the commands with mouse/keyboard as well");
                     }
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                 }
 
             };
@@ -1785,7 +1784,7 @@ namespace GTA.GangAndTurfMod
 
             bindingsMenu.OnItemSelect += (sender, item, index) =>
             {
-                UI.ShowSubtitle("Press the new key for this command.");
+                UI.Screen.ShowSubtitle("Press the new key for this command.");
                 CurInputType = DesiredInputType.changeKeyBinding;
 
                 if (item == openGangMenuBtn)
@@ -1839,22 +1838,22 @@ namespace GTA.GangAndTurfMod
                                 if (!GangWarManager.instance.StartWar(enemyAttackerAI.WatchedGang, curZone,
                                     GangWarManager.WarType.defendingFromEnemy, GangWarManager.AttackStrength.medium))
                                 {
-                                    UI.ShowSubtitle("Couldn't start a war. Is a war already in progress?");
+                                    UI.Screen.ShowSubtitle("Couldn't start a war. Is a war already in progress?");
                                 }
                             }
                             else
                             {
-                                UI.ShowSubtitle("The zone you are in is not controlled by your gang.");
+                                UI.Screen.ShowSubtitle("The zone you are in is not controlled by your gang.");
                             }
                         }
                         else
                         {
-                            UI.ShowSubtitle("The zone you are in has not been marked as takeable.");
+                            UI.Screen.ShowSubtitle("The zone you are in has not been marked as takeable.");
                         }
                     }
                     else
                     {
-                        UI.ShowSubtitle("There aren't any enemy gangs in San Andreas!");
+                        UI.Screen.ShowSubtitle("There aren't any enemy gangs in San Andreas!");
                     }
                 }
             };
@@ -1868,7 +1867,7 @@ namespace GTA.GangAndTurfMod
             {
                 if (item == newButton)
                 {
-                    ModOptions.LoadOptions();
+                    ModOptions.LoadData();
                     GangManager.ResetGangUpdateIntervals();
                     GangManager.AdjustGangsToModOptions();
                     UpdateUpgradeCosts();
@@ -1889,7 +1888,7 @@ namespace GTA.GangAndTurfMod
                 {
                     ModOptions.WeaponOptions.BuyableWeapons.Clear();
                     ModOptions.WeaponOptions.SetWeaponListDefaultValues();
-                    ModOptions.SaveOptions(false);
+                    ModOptions.IsDirty = true;
                     UpdateUpgradeCosts();
                 }
             };
@@ -1904,6 +1903,7 @@ namespace GTA.GangAndTurfMod
                 if (item == newButton)
                 {
                     ModOptions.SetAllValuesToDefault();
+                    ModOptions.SaveData();
                     UpdateUpgradeCosts();
                     UpdateTakeOverBtnText();
                 }
