@@ -102,7 +102,7 @@ namespace GTA.GangAndTurfMod
             return RandoMath.GetRandomElementFromList(BuyableWeapons).WepHash;
         }
 
-        public void SetupPrimaryWeapons(IModOptions modOptions)
+        public void SetupPrimaryWeapons(IDirtableSaveable modOptions)
         {
             if (modOptions == null) throw new ArgumentNullException(nameof(modOptions));
 

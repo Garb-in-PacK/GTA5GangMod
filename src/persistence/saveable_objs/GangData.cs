@@ -7,10 +7,10 @@ namespace GTA.GangAndTurfMod
 
         public GangData()
         {
-            gangs = new List<Gang>();
+            Gangs = new List<Gang>();
         }
 
-        public List<Gang> gangs;
+        public List<Gang> Gangs { get; private set; }
     }
 
 }

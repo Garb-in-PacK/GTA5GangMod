@@ -12,7 +12,7 @@ namespace GTA.GangAndTurfMod
     /// <summary>
     /// this script deals with gangs taking over zones. it also allows adding new zones to be taken
     /// </summary>
-    public class ZoneManager
+    public class ZoneManager : IDirtableSaveable
     {
 
         public enum ZoneBlipDisplay
@@ -58,6 +58,8 @@ namespace GTA.GangAndTurfMod
         public static ZoneManager instance;
         public TurfZoneData zoneData;
 
+        public bool IsDirty { get; set; }
+        public bool NotifyNextSave { get; set; }
 
         public ZoneManager()
         {
@@ -81,13 +83,9 @@ namespace GTA.GangAndTurfMod
             }
         }
 
-        public void SaveZoneData(bool notifySuccess = true)
+        public void SaveData(bool notifySuccess = true)
         {
-            AutoSaver.instance.zoneDataDirty = true;
-            if (notifySuccess)
-            {
-                AutoSaver.instance.zoneDataNotifySave = true;
-            }
+            PersistenceHandler.SaveToFile(this, "TurfZoneData", notifySuccess);
         }
 
         public void UpdateZoneData(TurfZone newTurfZone)
@@ -103,14 +101,14 @@ namespace GTA.GangAndTurfMod
 
             RefreshZoneBlips();
 
-            SaveZoneData(false);
+            IsDirty = true;
         }
 
         #endregion
 
         public void OutputCurrentZoneInfo()
         {
-            string zoneName = World.GetZoneName(MindControl.CurrentPlayerCharacter.Position);
+            string zoneName = World.GetZoneDisplayName(MindControl.CurrentPlayerCharacter.Position);
             string zoneInfoMsg = "Current zone is " + zoneName + ".";
             TurfZone currentZone = GetZoneByName(zoneName);
 
@@ -122,7 +120,7 @@ namespace GTA.GangAndTurfMod
                     {
                         GiveGangZonesToAnother(currentZone.ownerGangName, "none");
                         currentZone.ownerGangName = "none";
-                        SaveZoneData(false);
+                        IsDirty = true;
                         zoneInfoMsg += " It isn't owned by any gang.";
                     }
                     else
@@ -142,7 +140,7 @@ namespace GTA.GangAndTurfMod
                 zoneInfoMsg += " It hasn't been marked as takeable yet.";
             }
 
-            UI.ShowSubtitle(zoneInfoMsg);
+            UI.Screen.ShowSubtitle(zoneInfoMsg);
         }
 
         public static int CompareZonesByDistToPlayer(TurfZone x, TurfZone y)
@@ -255,7 +253,7 @@ namespace GTA.GangAndTurfMod
                         //zoneData.zoneList[i].AttachedBlip.Scale = 0;
                         if (zoneData.zoneList[i].AttachedBlip != null)
                         {
-                            zoneData.zoneList[i].AttachedBlip.Remove();
+                            zoneData.zoneList[i].AttachedBlip.Delete();
                             zoneData.zoneList[i].AttachedBlip = null;
                         }
 
@@ -281,7 +279,7 @@ namespace GTA.GangAndTurfMod
                         {
                             if (zoneData.zoneList[i].AttachedBlip != null)
                             {
-                                zoneData.zoneList[i].AttachedBlip.Remove();
+                                zoneData.zoneList[i].AttachedBlip.Delete();
                                 zoneData.zoneList[i].AttachedBlip = null;
                             }
                         }
@@ -344,7 +342,7 @@ namespace GTA.GangAndTurfMod
                 fromGangZones[i].ownerGangName = ToGang;
             }
 
-            SaveZoneData(false);
+            IsDirty = true;
         }
 
         #region getters
@@ -462,6 +460,11 @@ namespace GTA.GangAndTurfMod
             }
 
             return null;
+        }
+
+        public void LoadData()
+        {
+            throw new NotImplementedException();
         }
 
 

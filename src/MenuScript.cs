@@ -515,7 +515,7 @@ namespace GTA.GangAndTurfMod
                                 else
                                 {
                                     curZone.value++;
-                                    ZoneManager.instance.SaveZoneData(false);
+                                    ZoneManager.instance.IsDirty = true;
                                     UI.ShowSubtitle("Zone level increased!");
                                     MindControl.AddOrSubtractMoneyToProtagonist(-curZoneValueUpgradeCost);
                                     UpdateZoneUpgradeBtn();
@@ -746,7 +746,7 @@ namespace GTA.GangAndTurfMod
             specificGangMemberRegSubMenu.Clear();
             specificCarRegSubMenu.Clear();
 
-            List<Gang> gangsList = GangManager.GangData.gangs;
+            List<Gang> gangsList = GangManager.GangData.Gangs;
 
             for (int i = 0; i < gangsList.Count; i++)
             {
@@ -826,9 +826,9 @@ namespace GTA.GangAndTurfMod
                             UI.ShowSubtitle("Ped type not found in pool.");
                         }
 
-                        for (int i = 0; i < GangManager.GangData.gangs.Count; i++)
+                        for (int i = 0; i < GangManager.GangData.Gangs.Count; i++)
                         {
-                            GangManager.GangData.gangs[i].RemoveMemberVariation(memberToRemove);
+                            GangManager.GangData.Gangs[i].RemoveMemberVariation(memberToRemove);
                         }
                     }
                     else
@@ -845,9 +845,9 @@ namespace GTA.GangAndTurfMod
                             UI.ShowSubtitle("Ped type not found in pool.");
                         }
 
-                        for (int i = 0; i < GangManager.GangData.gangs.Count; i++)
+                        for (int i = 0; i < GangManager.GangData.Gangs.Count; i++)
                         {
-                            GangManager.GangData.gangs[i].RemoveMemberVariation(memberToRemove);
+                            GangManager.GangData.Gangs[i].RemoveMemberVariation(memberToRemove);
                         }
                     }
                 }
@@ -1023,9 +1023,9 @@ namespace GTA.GangAndTurfMod
                             UI.ShowSubtitle("Vehicle type not found in pool.");
                         }
 
-                        for (int i = 0; i < GangManager.GangData.gangs.Count; i++)
+                        for (int i = 0; i < GangManager.GangData.Gangs.Count; i++)
                         {
-                            GangManager.GangData.gangs[i].RemoveGangCar(removedVehicle);
+                            GangManager.GangData.Gangs[i].RemoveGangCar(removedVehicle);
                         }
                     }
                     else

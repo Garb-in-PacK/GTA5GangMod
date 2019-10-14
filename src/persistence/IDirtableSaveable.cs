@@ -12,13 +12,18 @@ using System.Xml.Resolvers;
 
 namespace GTA.GangAndTurfMod
 {
-    public interface IModOptions
+    /// <summary>
+    /// interface for saveable data objs that should probably be handled by the AutoSaver
+    /// </summary>
+    public interface IDirtableSaveable
     {
 
-        void LoadOptions();
+        void LoadData();
 
-        void SaveOptions(bool notifyMsg = true);
+        void SaveData(bool notifyMsg = true);
 
         bool IsDirty { get; set; }
+
+        bool NotifyNextSave { get; set; }
     }
 }

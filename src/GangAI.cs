@@ -210,7 +210,7 @@ namespace GTA.GangAndTurfMod
                 {
                     WatchedGang.moneyAvailable -= upgradeCost;
                     myZones[i].value++;
-                    ZoneManager.instance.SaveZoneData(false);
+                    ZoneManager.instance.IsDirty = true;
                     return;
                 }
                 else

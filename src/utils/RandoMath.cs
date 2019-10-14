@@ -33,7 +33,7 @@ namespace GTA.GangAndTurfMod
         /// <returns></returns>
         public static Math.Vector3 RandomDirection(bool zeroZ)
         {
-            Math.Vector3 theDirection = Math.Vector3.Zero;
+            Math.Vector3 theDirection;
             if (zeroZ)
             {
                 theDirection = Math.Vector3.RandomXY();
@@ -67,13 +67,13 @@ namespace GTA.GangAndTurfMod
 
         public static T GetRandomElementFromList<T>(List<T> theList)
         {
-            if (theList == null) return default(T);
+            if (theList == null) return default;
             return theList[CachedRandom.Next(theList.Count)];
         }
 
         public static T GetRandomElementFromArray<T>(T[] theArray)
         {
-            if (theArray == null) return default(T);
+            if (theArray == null) return default;
             return theArray[CachedRandom.Next(theArray.Length)];
         }
 

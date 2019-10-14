@@ -37,8 +37,10 @@ namespace GTA.GangAndTurfMod
             JoypadControls = false;
         }
 
-        public void SetKey(ChangeableKeyBinding keyToChange, Keys newKey, IModOptions modOptions)
+        public void SetKey(ChangeableKeyBinding keyToChange, Keys newKey, IDirtableSaveable modOptions)
         {
+            if (modOptions == null) throw new ArgumentNullException(nameof(modOptions));
+
             if (newKey == Keys.Escape || newKey == Keys.ShiftKey ||
                 newKey == Keys.Insert || newKey == Keys.ControlKey)
             {
@@ -80,7 +82,7 @@ namespace GTA.GangAndTurfMod
 
                 UI.ShowSubtitle("Key changed!");
 
-                modOptions?.SaveOptions();
+                modOptions.IsDirty = true;
             }
         }
     }

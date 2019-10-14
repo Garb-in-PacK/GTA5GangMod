@@ -74,7 +74,7 @@ namespace GTA.GangAndTurfMod
                 AdjustGangsToModOptions();
             }
 
-            if (GangData.gangs.Count == 1 && ModOptions.GangsOptions.MaxCoexistingGangs > 1)
+            if (GangData.Gangs.Count == 1 && ModOptions.GangsOptions.MaxCoexistingGangs > 1)
             {
                 //we're alone.. add an enemy!
                 CreateNewEnemyGang();
@@ -92,32 +92,32 @@ namespace GTA.GangAndTurfMod
         private static void SetUpAllGangs()
         {
             //set up the relationshipgroups
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
-                GangData.gangs[i].relationGroupIndex = World.AddRelationshipGroup(GangData.gangs[i].name);
+                GangData.Gangs[i].relationGroupIndex = World.AddRelationshipGroup(GangData.Gangs[i].name);
 
                 //if the player owns this gang, we love him
-                if (GangData.gangs[i].isPlayerOwned)
+                if (GangData.Gangs[i].isPlayerOwned)
                 {
-                    World.SetRelationshipBetweenGroups(Relationship.Companion, GangData.gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
-                    World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, GangData.gangs[i].relationGroupIndex);
+                    World.SetRelationshipBetweenGroups(Relationship.Companion, GangData.Gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
+                    World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, GangData.Gangs[i].relationGroupIndex);
                 }
                 else
                 {
                     //since we're checking each gangs situation...
                     //lets check if we don't have any member variation, which could be a problem
-                    if (GangData.gangs[i].memberVariations.Count == 0)
+                    if (GangData.Gangs[i].memberVariations.Count == 0)
                     {
-                        GetMembersForGang(GangData.gangs[i]);
+                        GetMembersForGang(GangData.Gangs[i]);
                     }
 
                     //lets also see if their colors are consistent
-                    GangData.gangs[i].EnforceGangColorConsistency();
+                    GangData.Gangs[i].EnforceGangColorConsistency();
 
 
                     //add this gang to the enemy gangs
                     //and start the AI for it
-                    EnemyGangs.Add(new GangAI(GangData.gangs[i]));
+                    EnemyGangs.Add(new GangAI(GangData.Gangs[i]));
                 }
 
             }
@@ -152,21 +152,21 @@ namespace GTA.GangAndTurfMod
                     targetRelationLevel = Relationship.Neutral;
                     break;
             }
-            for (int i = GangData.gangs.Count - 1; i > -1; i--)
+            for (int i = GangData.Gangs.Count - 1; i > -1; i--)
             {
                 for (int j = 0; j < i; j++)
                 {
-                    if ((GangData.gangs[i] != excludedGang || GangData.gangs[j] != PlayerGang) &&
-                        (GangData.gangs[j] != excludedGang || GangData.gangs[i] != PlayerGang))
+                    if ((GangData.Gangs[i] != excludedGang || GangData.Gangs[j] != PlayerGang) &&
+                        (GangData.Gangs[j] != excludedGang || GangData.Gangs[i] != PlayerGang))
                     {
-                        World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.gangs[i].relationGroupIndex, GangData.gangs[j].relationGroupIndex);
-                        World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.gangs[j].relationGroupIndex, GangData.gangs[i].relationGroupIndex);
+                        World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.Gangs[i].relationGroupIndex, GangData.Gangs[j].relationGroupIndex);
+                        World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.Gangs[j].relationGroupIndex, GangData.Gangs[i].relationGroupIndex);
                     }
                 }
-                if (!GangData.gangs[i].isPlayerOwned && GangData.gangs[i] != excludedGang)
+                if (!GangData.Gangs[i].isPlayerOwned && GangData.Gangs[i] != excludedGang)
                 {
-                    World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
-                    World.SetRelationshipBetweenGroups(targetRelationLevel, Game.Player.Character.RelationshipGroup, GangData.gangs[i].relationGroupIndex);
+                    World.SetRelationshipBetweenGroups(targetRelationLevel, GangData.Gangs[i].relationGroupIndex, Game.Player.Character.RelationshipGroup);
+                    World.SetRelationshipBetweenGroups(targetRelationLevel, Game.Player.Character.RelationshipGroup, GangData.Gangs[i].relationGroupIndex);
                 }
             }
         }
@@ -177,10 +177,10 @@ namespace GTA.GangAndTurfMod
             int relationLevel = 3; //neutral
             if (hate) relationLevel = 5; //hate
 
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
-                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, copHash, GangData.gangs[i].relationGroupIndex);
-                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, GangData.gangs[i].relationGroupIndex, copHash);
+                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, copHash, GangData.Gangs[i].relationGroupIndex);
+                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, relationLevel, GangData.Gangs[i].relationGroupIndex, copHash);
             }
         }
 
@@ -190,10 +190,10 @@ namespace GTA.GangAndTurfMod
         /// <param name="notifySuccess"></param>
         public static void SaveGangData(bool notifySuccess = true)
         {
-            AutoSaver.instance.gangDataDirty = true;
+            AutoSaver.Instance.gangDataDirty = true;
             if (notifySuccess)
             {
-                AutoSaver.instance.gangDataNotifySave = true;
+                AutoSaver.Instance.gangDataNotifySave = true;
             }
         }
         #endregion
@@ -277,7 +277,7 @@ namespace GTA.GangAndTurfMod
         {
             Gang playerGang = new Gang("Player's Gang", VehicleColor.BrushedGold, true);
             //setup gangs
-            GangData.gangs.Add(playerGang);
+            GangData.Gangs.Add(playerGang);
 
             playerGang.blipColor = (int)BlipColor.Yellow;
 
@@ -335,13 +335,13 @@ namespace GTA.GangAndTurfMod
             World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, Game.Player.Character.RelationshipGroup);
             World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, newGang.relationGroupIndex);
 
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
-                World.SetRelationshipBetweenGroups(Relationship.Hate, GangData.gangs[i].relationGroupIndex, newGang.relationGroupIndex);
-                World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, GangData.gangs[i].relationGroupIndex);
+                World.SetRelationshipBetweenGroups(Relationship.Hate, GangData.Gangs[i].relationGroupIndex, newGang.relationGroupIndex);
+                World.SetRelationshipBetweenGroups(Relationship.Hate, newGang.relationGroupIndex, GangData.Gangs[i].relationGroupIndex);
             }
 
-            GangData.gangs.Add(newGang);
+            GangData.Gangs.Add(newGang);
 
             newGang.GetPistolIfOptionsRequire();
 
@@ -384,7 +384,7 @@ namespace GTA.GangAndTurfMod
 
             //save the fallen gang in a file
             AddGangToWipedOutList(aiWatchingTheGang.WatchedGang);
-            GangData.gangs.Remove(aiWatchingTheGang.WatchedGang);
+            GangData.Gangs.Remove(aiWatchingTheGang.WatchedGang);
             EnemyGangs.Remove(aiWatchingTheGang);
             if (EnemyGangs.Count == 0 && ModOptions.GangsOptions.MaxCoexistingGangs > 1)
             {
@@ -456,7 +456,7 @@ namespace GTA.GangAndTurfMod
         /// </summary>
         public static void AdjustGangsToModOptions()
         {
-            foreach (Gang g in GangData.gangs)
+            foreach (Gang g in GangData.Gangs)
             {
                 g.AdjustStatsToModOptions();
                 g.AdjustWeaponChoicesToModOptions();
@@ -488,11 +488,11 @@ namespace GTA.GangAndTurfMod
         /// <returns></returns>
         public static Gang GetGangByName(string name)
         {
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
-                if (GangData.gangs[i].name == name)
+                if (GangData.Gangs[i].name == name)
                 {
-                    return GangData.gangs[i];
+                    return GangData.Gangs[i];
                 }
             }
             return null;
@@ -505,11 +505,11 @@ namespace GTA.GangAndTurfMod
         /// <returns></returns>
 		public static Gang GetGangByRelGroup(int relGroupIndex)
         {
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
-                if (GangData.gangs[i].relationGroupIndex == relGroupIndex)
+                if (GangData.Gangs[i].relationGroupIndex == relGroupIndex)
                 {
-                    return GangData.gangs[i];
+                    return GangData.Gangs[i];
                 }
             }
             return null;
@@ -538,11 +538,11 @@ namespace GTA.GangAndTurfMod
         /// <returns></returns>
         private static Gang GetPlayerGang()
         {
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
-                if (GangData.gangs[i].isPlayerOwned)
+                if (GangData.Gangs[i].isPlayerOwned)
                 {
-                    return GangData.gangs[i];
+                    return GangData.Gangs[i];
                 }
             }
             return null;
@@ -556,16 +556,16 @@ namespace GTA.GangAndTurfMod
         {
             Gang pickedGang = null;
 
-            for (int i = 0; i < GangData.gangs.Count; i++)
+            for (int i = 0; i < GangData.Gangs.Count; i++)
             {
                 if (pickedGang != null)
                 {
-                    if (GangData.gangs[i].moneyAvailable > pickedGang.moneyAvailable)
-                        pickedGang = GangData.gangs[i];
+                    if (GangData.Gangs[i].moneyAvailable > pickedGang.moneyAvailable)
+                        pickedGang = GangData.Gangs[i];
                 }
                 else
                 {
-                    pickedGang = GangData.gangs[i];
+                    pickedGang = GangData.Gangs[i];
                 }
             }
 

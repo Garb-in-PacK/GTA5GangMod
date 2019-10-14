@@ -13,56 +13,13 @@ using System.Xml.Resolvers;
 namespace GTA.GangAndTurfMod
 {
     [System.Serializable]
-    public class ModOptions : IModOptions
+    public class ModOptions : IDirtableSaveable
     {
         public ModOptions()
         {
-            LoadOptions();
+            LoadData();
             WeaponOptions.SetupPrimaryWeapons(this);
         }
-
-        public void LoadOptions()
-        {
-            ModOptions loadedOptions = PersistenceHandler.LoadFromFile<ModOptions>("ModOptions");
-            if (loadedOptions != null)
-            {
-                //get the loaded options
-                this.MsAutoSaveInterval = loadedOptions.MsAutoSaveInterval;
-                this.NotificationsEnabled = loadedOptions.NotificationsEnabled;
-                this.LoggerLevel = loadedOptions.LoggerLevel;
-
-                this.Keys = loadedOptions.Keys;
-
-                this.MemberUpgradeOptions = loadedOptions.MemberUpgradeOptions;
-
-                this.MemberAIOptions = loadedOptions.MemberAIOptions;
-
-                this.GangsOptions = loadedOptions.GangsOptions;
-
-                this.BackupOptions = loadedOptions.BackupOptions;
-
-                this.GangAIOptions = loadedOptions.GangAIOptions;
-
-                this.WarOptions = loadedOptions.WarOptions;
-
-                this.GangColorsOptions = loadedOptions.GangColorsOptions;
-
-                SaveOptions();
-            }
-            else
-            {
-                SetAllValuesToDefault();
-                GangNamesOptions.SetNameListsDefaultValues();
-                GangColorsOptions.SetColorTranslationDefaultValues();
-                SaveOptions(true);
-            }
-        }
-
-        public void SaveOptions(bool notifyMsg = true)
-        {
-            PersistenceHandler.SaveToFile(this, "ModOptions", notifyMsg);
-        }
-
 
         /// <summary>
         /// 0 = nothing,
@@ -104,6 +61,7 @@ namespace GTA.GangAndTurfMod
         public GangNamesOptions GangNamesOptions { get; private set; }
 
         public bool IsDirty { get; set; }
+        public bool NotifyNextSave { get; set; }
 
 
         /// <summary>
@@ -130,9 +88,51 @@ namespace GTA.GangAndTurfMod
 
             GangsOptions.SetOptionsToDefault();
 
-            SaveOptions();
+            SaveData();
 
             GangManager.ResetGangUpdateIntervals();
+        }
+
+        public void LoadData()
+        {
+            ModOptions loadedOptions = PersistenceHandler.LoadFromFile<ModOptions>("ModOptions");
+            if (loadedOptions != null)
+            {
+                //get the loaded options
+                this.MsAutoSaveInterval = loadedOptions.MsAutoSaveInterval;
+                this.NotificationsEnabled = loadedOptions.NotificationsEnabled;
+                this.LoggerLevel = loadedOptions.LoggerLevel;
+
+                this.Keys = loadedOptions.Keys;
+
+                this.MemberUpgradeOptions = loadedOptions.MemberUpgradeOptions;
+
+                this.MemberAIOptions = loadedOptions.MemberAIOptions;
+
+                this.GangsOptions = loadedOptions.GangsOptions;
+
+                this.BackupOptions = loadedOptions.BackupOptions;
+
+                this.GangAIOptions = loadedOptions.GangAIOptions;
+
+                this.WarOptions = loadedOptions.WarOptions;
+
+                this.GangColorsOptions = loadedOptions.GangColorsOptions;
+
+                SaveData();
+            }
+            else
+            {
+                SetAllValuesToDefault();
+                GangNamesOptions.SetNameListsDefaultValues();
+                GangColorsOptions.SetColorTranslationDefaultValues();
+                SaveData(true);
+            }
+        }
+
+        public void SaveData(bool notifyMsg = true)
+        {
+            PersistenceHandler.SaveToFile(this, "ModOptions", notifyMsg);
         }
     }
 }

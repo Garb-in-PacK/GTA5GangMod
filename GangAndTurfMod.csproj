@@ -72,9 +72,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>libs\NativeUI.dll</HintPath>
     </Reference>
-    <Reference Include="ScriptHookVDotNet2, Version=2.10.9.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>libs\ScriptHookVDotNet2.dll</HintPath>
+    <Reference Include="ScriptHookVDotNet3">
+      <HintPath>libs\ScriptHookVDotNet3.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -89,10 +88,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AmbientGangMemberSpawner.cs" />
-    <Compile Include="src\GangData.cs" />
+    <Compile Include="src\persistence\saveable_objs\GangData.cs" />
     <Compile Include="src\MindControl.cs" />
+    <Compile Include="src\persistence\modOptions\GangNamesOptions.cs" />
+    <Compile Include="src\persistence\modOptions\GangColorsOptions.cs" />
+    <Compile Include="src\persistence\modOptions\WeaponOptions.cs" />
+    <Compile Include="src\persistence\modOptions\GangsOptions.cs" />
+    <Compile Include="src\persistence\modOptions\GangAIOptions.cs" />
+    <Compile Include="src\persistence\modOptions\IModOptionGroup.cs" />
+    <Compile Include="src\persistence\modOptions\BackupOptions.cs" />
+    <Compile Include="src\persistence\modOptions\ZoneOptions.cs" />
+    <Compile Include="src\persistence\modOptions\MemberAIOptions.cs" />
+    <Compile Include="src\persistence\modOptions\MemberUpgradeOptions.cs" />
+    <Compile Include="src\persistence\modOptions\SpawningOptions.cs" />
+    <Compile Include="src\persistence\modOptions\WarOptions.cs" />
+    <Compile Include="src\persistence\modOptions\ModKeyBindings.cs" />
     <Compile Include="src\persistence\saveable_objs\BuyableWeapon.cs" />
     <Compile Include="src\persistence\saveable_objs\GangColorTranslation.cs" />
+    <Compile Include="src\persistence\IDirtableSaveable.cs" />
     <Compile Include="src\persistence\saveable_objs\potentials\PotentialMemberPool.cs" />
     <Compile Include="src\SpawnManager.cs" />
     <Compile Include="src\persistence\AutoSaver.cs" />
@@ -107,7 +120,7 @@
     <Compile Include="src\utils\Logger.cs" />
     <Compile Include="src\MenuScript.cs" />
     <Compile Include="src\ModCore.cs" />
-    <Compile Include="src\persistence\saveable_objs\ModOptions.cs" />
+    <Compile Include="src\persistence\modOptions\ModOptions.cs" />
     <Compile Include="src\persistence\PersistenceHandler.cs" />
     <Compile Include="src\persistence\saveable_objs\potentials\PotentialGangMember.cs" />
     <Compile Include="src\persistence\saveable_objs\potentials\PotentialGangVehicle.cs" />

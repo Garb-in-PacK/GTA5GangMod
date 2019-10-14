@@ -15,36 +15,28 @@ namespace GTA.GangAndTurfMod
 {
     public class AutoSaver : Script
     {
+        public List<IDirtableSaveable> Dirtables { get; } = new List<IDirtableSaveable>();
 
-        //TODO make those "dirtable" data containers use a Dirtable interface, 
-        //and then just keep a list so that they can register here
-
-        public static AutoSaver instance;
-
-        public bool gangDataDirty = false, zoneDataDirty = false;
-        public bool gangDataNotifySave = false, zoneDataNotifySave = false;
+        public ModOptions ModOptions { get; set; }
+        public static AutoSaver Instance { get; private set; }
 
         private void OnTick(object sender, EventArgs e)
         {
-            if (ModOptions.Instance == null) return;
-            if (ModOptions.Instance.MsAutoSaveInterval <= 0)
+            if (ModOptions == null) return;
+            if (ModOptions.MsAutoSaveInterval <= 0)
             { //reset if invalid
-                ModOptions.Instance.MsAutoSaveInterval = 3000;
+                ModOptions.MsAutoSaveInterval = 3000;
             }
-            Wait(ModOptions.Instance.MsAutoSaveInterval);
-            if (gangDataDirty)
+            Wait(ModOptions.MsAutoSaveInterval);
+
+            foreach(IDirtableSaveable dirtable in Dirtables)
             {
-                PersistenceHandler.SaveToFile(GangManager.GangData, "GangData", gangDataNotifySave);
-                gangDataDirty = false;
-                gangDataNotifySave = false;
-                return;
-            }
-            if (zoneDataDirty)
-            {
-                PersistenceHandler.SaveToFile(ZoneManager.instance.zoneData, "TurfZoneData", zoneDataNotifySave);
-                zoneDataDirty = false;
-                zoneDataNotifySave = false;
-                return;
+                if (dirtable.IsDirty)
+                {
+                    dirtable.SaveData(dirtable.NotifyNextSave);
+                    dirtable.IsDirty = false;
+                    dirtable.NotifyNextSave = false;
+                }
             }
         }
 
@@ -52,7 +44,7 @@ namespace GTA.GangAndTurfMod
         public AutoSaver()
         {
             this.Tick += OnTick;
-            instance = this;
+            Instance = this;
         }
 
     }

@@ -87,7 +87,7 @@ namespace GTA.GangAndTurfMod
             Logger.Log("ambient spawner tick: end", 5);
         }
 
-        public SpawnedGangMember SpawnAmbientMember(Gang curGang)
+        public static SpawnedGangMember SpawnAmbientMember(Gang curGang)
         {
             Vector3 spawnPos = SpawnManager.instance.FindGoodSpawnPointForMember
                 (MindControl.CurrentPlayerCharacter.Position);
@@ -95,7 +95,7 @@ namespace GTA.GangAndTurfMod
             return newMember;
         }
 
-        public void SpawnAmbientVehicle(Gang curGang)
+        public static SpawnedDrivingGangMember SpawnAmbientVehicle(Gang curGang)
         {
             Vector3 vehSpawnPoint = SpawnManager.instance.FindGoodSpawnPointForCar
                 (MindControl.CurrentPlayerCharacter.Position);
@@ -110,6 +110,8 @@ namespace GTA.GangAndTurfMod
                     spawnedVehicleAI.DoCruise();
                 }
             }
+
+            return spawnedVehicleAI;
         }
 
         public AmbientGangMemberSpawner()
