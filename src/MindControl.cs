@@ -14,15 +14,17 @@ namespace GTA.GangAndTurfMod
     /// <summary>
     /// this script controls most things related to the mind control feature
     /// </summary>
-    public static class MindControl
+    public class MindControl
     {
-
         public static SpawnedGangMember CurrentlyControlledMember { get; private set; } = null;
-        private static bool hasDiedWithChangedBody = false;
-        private static Ped theOriginalPed;
+        private bool hasDiedWithChangedBody = false;
+        private Ped theOriginalPed;
 
-        private static int moneyFromLastProtagonist = 0;
-        private static int defaultMaxHealth = -1;
+        private int moneyFromLastProtagonist = 0;
+        private int defaultMaxHealth = -1;
+
+        public GangManager GangManager { get; private set; }
+        public SpawnManager SpawnManager { get; private set; }
 
         /// <summary>
         /// the character currently controlled by the player. 
@@ -55,11 +57,11 @@ namespace GTA.GangAndTurfMod
             {
                 if (CurrentPlayerCharacter.IsInAir || CurrentPlayerCharacter.IsInFlyingVehicle)
                 {
-                    rayResult = World.Raycast(CurrentPlayerCharacter.Position, Vector3.WorldDown, 99999.0f, IntersectOptions.Map);
-                    if (rayResult.DitHitAnything)
+                    rayResult = World.Raycast(CurrentPlayerCharacter.Position, Vector3.WorldDown, 99999.0f, IntersectFlags.Map);
+                    if (rayResult.DidHit)
                     {
                         Logger.Log("SafePositionNearPlayer: ray ok!", 4);
-                        return rayResult.HitCoords;
+                        return rayResult.HitPosition;
                     }
                     else
                     {
@@ -77,7 +79,7 @@ namespace GTA.GangAndTurfMod
             }
         }
 
-        public static void Tick()
+        public void Tick()
         {
             if (HasChangedBody)
             {
@@ -90,7 +92,7 @@ namespace GTA.GangAndTurfMod
         /// <summary>
         /// the addition to the tick methods when the player is in control of a member
         /// </summary>
-        private static void TickMindControl()
+        private void TickMindControl()
         {
             if (Function.Call<bool>(Hash.IS_PLAYER_BEING_ARRESTED, Game.Player, true))
             {
@@ -147,33 +149,32 @@ namespace GTA.GangAndTurfMod
         /// attempts to change the player's body.
         /// if the player has already changed body, the original body is restored
         /// </summary>
-        public static void TryBodyChange()
+        public void TryBodyChange(Entity targetedEnt)
         {
+            Ped targetAsPed = (Ped)targetedEnt;
+
+            if (targetAsPed == null) return;
+
             if (!HasChangedBody)
             {
-                List<Ped> playerGangMembers = SpawnManager.instance.GetSpawnedPedsOfGang
-                    (GangManager.PlayerGang);
-                for (int i = 0; i < playerGangMembers.Count; i++)
+                SpawnedGangMember memberAI = SpawnManager.GetTargetMemberAI(targetAsPed, true);
+
+                if(memberAI != null && memberAI.myGang.isPlayerOwned)
                 {
-                    if (Game.Player.IsTargetting(playerGangMembers[i]))
-                    {
-                        if (playerGangMembers[i].IsAlive)
-                        {
-                            theOriginalPed = CurrentPlayerCharacter;
-                            //adds a blip to the protagonist so that we know where we left him
-                            Blip protagonistBlip = theOriginalPed.AddBlip();
-                            protagonistBlip.Sprite = BlipSprite.Creator;
-                            Function.Call(Hash.BEGIN_TEXT_COMMAND_SET_BLIP_NAME, "STRING");
-                            Function.Call(Hash._ADD_TEXT_COMPONENT_STRING, "Last Used Protagonist");
-                            Function.Call(Hash.END_TEXT_COMMAND_SET_BLIP_NAME, protagonistBlip);
+                    theOriginalPed = CurrentPlayerCharacter;
+                    //adds a blip to the protagonist so that we know where we left him
+                    Blip protagonistBlip = theOriginalPed.AddBlip();
+                    protagonistBlip.Sprite = BlipSprite.Creator;
+                    protagonistBlip.Name = "Last Used Protagonist";
+
+                    //Function.Call(Hash.BEGIN_TEXT_COMMAND_SET_BLIP_NAME, "STRING");
+                    //Function.Call(Hash._ADD_TEXT_COMPONENT_STRING, "Last Used Protagonist");
+                    //Function.Call(Hash.END_TEXT_COMMAND_SET_BLIP_NAME, protagonistBlip);
 
 
-                            defaultMaxHealth = theOriginalPed.MaxHealth;
-                            moneyFromLastProtagonist = Game.Player.Money;
-                            TakePedBody(playerGangMembers[i]);
-                            break;
-                        }
-                    }
+                    defaultMaxHealth = theOriginalPed.MaxHealth;
+                    moneyFromLastProtagonist = Game.Player.Money;
+                    TakePedBody(memberAI);
                 }
             }
             else
@@ -183,8 +184,12 @@ namespace GTA.GangAndTurfMod
 
         }
 
-        private static void TakePedBody(Ped targetPed)
+        private void TakePedBody(Ped targetPed)
         {
+            SpawnedGangMember member = SpawnManager.GetTargetMemberAI(targetPed);
+
+            if (member == null) return;
+
             targetPed.Task.ClearAllImmediately();
 
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, targetPed, true, true);
@@ -192,7 +197,23 @@ namespace GTA.GangAndTurfMod
             targetPed.Armor += targetPed.Health;
             targetPed.MaxHealth = 5000;
             targetPed.Health = 5000;
-            CurrentlyControlledMember = SpawnManager.instance.GetTargetMemberAI(targetPed);
+            CurrentlyControlledMember = member;
+
+            Game.Player.CanControlCharacter = true;
+        }
+
+        private void TakePedBody(SpawnedGangMember targetPedAI)
+        {
+            if (targetPedAI == null) throw new ArgumentNullException(nameof(targetPedAI));
+
+            targetPedAI.watchedPed.Task.ClearAllImmediately();
+
+            Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, targetPedAI.watchedPed, true, true);
+            Game.Player.MaxArmor = targetPedAI.watchedPed.Armor + targetPedAI.watchedPed.MaxHealth;
+            targetPedAI.watchedPed.Armor += targetPedAI.watchedPed.Health;
+            targetPedAI.watchedPed.MaxHealth = 5000;
+            targetPedAI.watchedPed.Health = 5000;
+            CurrentlyControlledMember = targetPedAI;
 
             Game.Player.CanControlCharacter = true;
         }
@@ -201,12 +222,11 @@ namespace GTA.GangAndTurfMod
         /// makes the body the player was using become dead for real
         /// </summary>
         /// <param name="theBody"></param>
-        private static void DiscardDeadBody(Ped theBody)
+        private void DiscardDeadBody(Ped theBody)
         {
             hasDiedWithChangedBody = false;
             theBody.RelationshipGroup = GangManager.PlayerGang.relationGroup;
             theBody.IsInvincible = false;
-            theBody.Health = 0;
             theBody.Kill();
         }
 
@@ -215,13 +235,13 @@ namespace GTA.GangAndTurfMod
         /// if there isnt any, creates one parachuting.
         /// you can only respawn if you have died as a gang member
         /// </summary>
-        public static void RespawnIfPossible()
+        public void RespawnIfPossible()
         {
             if (hasDiedWithChangedBody)
             {
                 Ped oldPed = CurrentPlayerCharacter;
 
-                List<Ped> respawnOptions = SpawnManager.instance.GetSpawnedPedsOfGang
+                List<Ped> respawnOptions = SpawnManager.GetSpawnedPedsOfGang
                     (GangManager.PlayerGang);
 
                 for (int i = 0; i < respawnOptions.Count; i++)
@@ -237,7 +257,7 @@ namespace GTA.GangAndTurfMod
                 }
 
                 //lets parachute if no one outside a veh is around
-                SpawnedGangMember spawnedPara = SpawnManager.instance.SpawnGangMember
+                SpawnedGangMember spawnedPara = SpawnManager.SpawnGangMember
                     (GangManager.PlayerGang,
                    CurrentPlayerCharacter.Position + Vector3.WorldUp * 70);
                 if (spawnedPara != null)
@@ -254,13 +274,13 @@ namespace GTA.GangAndTurfMod
         /// <summary>
         /// restores player control to the last protagonist being used
         /// </summary>
-		public static void RestorePlayerBody()
+		public void RestorePlayerBody()
         {
             Ped oldPed = CurrentPlayerCharacter;
             //return to original body
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, theOriginalPed, true, true);
             Game.Player.MaxArmor = 100;
-            theOriginalPed.CurrentBlip.Remove();
+            theOriginalPed.AttachedBlip.Delete();
             theOriginalPed.MaxHealth = defaultMaxHealth;
             if (theOriginalPed.Health > theOriginalPed.MaxHealth) theOriginalPed.Health = theOriginalPed.MaxHealth;
             theOriginalPed.Task.ClearAllImmediately();
@@ -268,7 +288,6 @@ namespace GTA.GangAndTurfMod
             if (hasDiedWithChangedBody)
             {
                 oldPed.IsInvincible = false;
-                oldPed.Health = 0;
                 oldPed.MarkAsNoLongerNeeded();
                 oldPed.Kill();
             }
@@ -302,7 +321,7 @@ namespace GTA.GangAndTurfMod
         /// </summary>
         /// <param name="valueToAdd"></param>
         /// <returns></returns>
-        public static bool AddOrSubtractMoneyToProtagonist(int valueToAdd, bool onlyCheck = false)
+        public bool AddOrSubtractMoneyToProtagonist(int valueToAdd, bool onlyCheck = false)
         {
             if (HasChangedBody)
             {

@@ -151,7 +151,7 @@ namespace GTA.GangAndTurfMod
                 }
                 else if (e.KeyCode == ModOptions.Keys.MindControlKey)
                 {
-                    MindControl.TryBodyChange();
+                    MindControl.TryBodyChange(Game.Player.TargetedEntity);
                 }
                 else if (e.KeyCode == Keys.Space)
                 {
